@@ -1,5 +1,6 @@
-enum Object {
-    Commit,
-    Tree,
-    Blob,
+#[derive(Debug)]
+pub enum Object {
+    Commit(String),
+    Tree(String),
+    Blob(String),
 }

@@ -1,12 +1,13 @@
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::Read;
-use std::io::{BufReader, BufWriter, Error};
+use std::io::{BufReader, BufWriter, Error, Read};
 use std::path::{Path, PathBuf};
 
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
+
+use crate::object::Object;
 
 const GIT_DIR: &str = ".git";
 const OBJECT_DIR: &str = "objects";
@@ -53,10 +54,20 @@ impl Repository {
         Ok(())
     }
 
-    pub fn read_object(&self, hash: &str) -> Result<String, Error> {
+    pub fn read_object(&self, hash: &str) -> Result<Object, Box<dyn std::error::Error>> {
         let (dir, file) = hash.split_at(2);
         let relative_path = format!("{}/{}", dir, file);
         let path = self.objects.join(Path::new(&relative_path));
-        Repository::read_zlib(path)
+        let contents = Repository::read_zlib(path)?;
+
+        // TODO[Rhys] this could use some much fancier parsing
+        // TODO[Rhys] i don't think we need the whole contents here
+        // TODO[Rhys] we could be doing size validation on these objects
+        match contents.split_whitespace().next() {
+            Some("commit") => Ok(Object::Commit(contents)),
+            Some("tree") => Ok(Object::Tree(contents)),
+            Some("blob") => Ok(Object::Blob(contents)),
+            other => panic!("invalid object type {:?}", other)
+        }
     }
 }
