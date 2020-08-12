@@ -1,0 +1,9 @@
+[package]
+name = "gitrs"
+version = "0.1.0"
+authors = ["rhysormond <git@rhysormond.com>"]
+edition = "2018"
+
+[dependencies]
+rust-crypto = "0.2"
+flate2 = "1"

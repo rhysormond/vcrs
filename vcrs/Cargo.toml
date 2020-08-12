@@ -1,0 +1,9 @@
+[package]
+name = "vcrs"
+version = "0.1.0"
+authors = ["rhysormond <git@rhysormond.com>"]
+edition = "2018"
+
+[dependencies]
+gitrs = { version = "0.1.0", path = "../" }
+clap = "3.0.0-beta.1"
