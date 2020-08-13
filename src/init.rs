@@ -4,14 +4,14 @@ use std::{fs, io};
 
 use crate::repository::Repository;
 
-pub fn init() -> Result<(), io::Error> {
+pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     let repo = Repository::new(std::env::current_dir()?);
 
     if !repo.work_tree.read_dir()?.next().is_none() {
-        return Err(io::Error::new(
+        return Err(Box::new(io::Error::new(
             io::ErrorKind::AlreadyExists,
             format!("{:?} is not empty", repo.work_tree),
-        ));
+        )));
     }
 
     // TODO[Rhys] we need to create things like config, description, tags, etc.

@@ -54,20 +54,16 @@ impl Repository {
         Ok(())
     }
 
+    fn write_object(&self, obj: Object) -> Result<String, std::io::Error> {
+        // TODO[Rhys] this still needs to: hash the object, write the file, return the hash
+        Ok(obj.serialize())
+    }
+
     pub fn read_object(&self, hash: &str) -> Result<Object, Box<dyn std::error::Error>> {
         let (dir, file) = hash.split_at(2);
         let relative_path = format!("{}/{}", dir, file);
         let path = self.objects.join(Path::new(&relative_path));
         let contents = Repository::read_zlib(path)?;
-
-        // TODO[Rhys] this could use some much fancier parsing
-        // TODO[Rhys] i don't think we need the whole contents here
-        // TODO[Rhys] we could be doing size validation on these objects
-        match contents.split_whitespace().next() {
-            Some("commit") => Ok(Object::Commit(contents)),
-            Some("tree") => Ok(Object::Tree(contents)),
-            Some("blob") => Ok(Object::Blob(contents)),
-            other => panic!("invalid object type {:?}", other)
-        }
+        Object::deserialize(contents)
     }
 }
