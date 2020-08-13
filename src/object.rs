@@ -1,5 +1,8 @@
 use std::{error::Error, fmt};
 
+const OBJECT_KIND_SEP: char = 0x20_u8 as char;
+const OBJECT_SIZE_SEP: char = 0x00_u8 as char;
+
 #[derive(Debug)]
 struct DeserializationError {
     thing: String,
@@ -23,6 +26,7 @@ pub enum Object {
     Commit(String),
     Tree(String),
     Blob(String),
+    Tag(String),
 }
 
 impl Object {
@@ -31,27 +35,33 @@ impl Object {
             Self::Commit(body) => body,
             Self::Tree(body) => body,
             Self::Blob(body) => body,
+            Self::Tag(body) => body,
         }
         .to_string()
     }
 
     pub fn deserialize(body: String) -> Result<Self, Box<dyn Error>> {
         // TODO[Rhys] this could use some much fancier parsing
-        // TODO[Rhys] i don't think we need the whole contents here
-        // TODO[Rhys] we could be doing size validation on these objects
-        // TODO[Rhys] this encoding is incorrect as we need to strip the object type and size
-        let clone = body.clone();
-        match body.split_whitespace().next() {
-            Some("commit") => Ok(Object::Commit(body)),
-            Some("tree") => Ok(Object::Tree(body)),
-            Some("blob") => Ok(Object::Blob(body)),
-            Some(other) => Err(Box::new(DeserializationError {
-                thing: clone,
-                reason: format!("unsupported type {}", other),
-            })),
-            None => Err(Box::new(DeserializationError {
-                thing: clone,
-                reason: String::from("type could not be inferred"),
+        let mut kind_splitter = body.splitn(2, OBJECT_KIND_SEP);
+        let kind = kind_splitter.next().unwrap();
+        let mut content_splitter = kind_splitter.next().unwrap().splitn(2, OBJECT_SIZE_SEP);
+        let size = content_splitter.next().unwrap();
+        let content: String = content_splitter.next().unwrap().parse()?;
+
+        assert_eq!(
+            size.parse::<usize>()? as usize,
+            content.len(),
+            "Content length was not equal to the encoded size."
+        );
+
+        match kind {
+            "commit" => Ok(Object::Commit(content)),
+            "tree" => Ok(Object::Tree(content)),
+            "blob" => Ok(Object::Blob(content)),
+            "tag" => Ok(Object::Tag(content)),
+            other => Err(Box::new(DeserializationError {
+                thing: content,
+                reason: format!("Unsupported object type {}.", other),
             })),
         }
     }
