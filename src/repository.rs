@@ -7,7 +7,11 @@ use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
+
 use crate::object::Object;
+use std::fs;
 
 const GIT_DIR: &str = ".git";
 const OBJECT_DIR: &str = "objects";
@@ -38,6 +42,11 @@ impl Repository {
         }
     }
 
+    fn hash_to_path(hash: &str) -> PathBuf {
+        let (dir, file) = hash.split_at(2);
+        Path::new(&format!("{}/{}", dir, file)).into()
+    }
+
     fn read_zlib(path: PathBuf) -> Result<String, Error> {
         let file = File::open(path)?;
         let mut decoder = ZlibDecoder::new(BufReader::new(&file));
@@ -47,6 +56,7 @@ impl Repository {
     }
 
     fn write_zlib(path: PathBuf, contents: &str) -> Result<(), Error> {
+        fs::create_dir_all(path.parent().unwrap())?;
         let file = File::create(path)?;
         let mut encoder = ZlibEncoder::new(BufWriter::new(&file), Compression::default());
         encoder.write_all(contents.as_ref())?;
@@ -54,15 +64,19 @@ impl Repository {
         Ok(())
     }
 
-    fn write_object(&self, obj: Object) -> Result<String, std::io::Error> {
-        // TODO[Rhys] this still needs to: hash the object, write the file, return the hash
-        Ok(obj.serialize())
+    pub fn write_object(&self, obj: Object) -> Result<String, Error> {
+        let contents = obj.serialize();
+        let mut hasher = Sha1::new();
+        hasher.input_str(&*contents);
+        let hash = hasher.result_str();
+        let relative_path = Repository::hash_to_path(&*hash);
+        let path = self.objects.join(relative_path);
+        Repository::write_zlib(path, &*contents).map(|_ok| hash)
     }
 
     pub fn read_object(&self, hash: &str) -> Result<Object, Box<dyn std::error::Error>> {
-        let (dir, file) = hash.split_at(2);
-        let relative_path = format!("{}/{}", dir, file);
-        let path = self.objects.join(Path::new(&relative_path));
+        let relative_path = Repository::hash_to_path(hash);
+        let path = self.objects.join(relative_path);
         let contents = Repository::read_zlib(path)?;
         Object::deserialize(contents)
     }
