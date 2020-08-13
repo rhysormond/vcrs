@@ -5,7 +5,7 @@ use std::{fs, io};
 use crate::repository::Repository;
 
 pub fn init() -> Result<(), Box<dyn std::error::Error>> {
-    let repo = Repository::new(std::env::current_dir()?);
+    let repo = Repository::for_working_directory()?;
 
     if !repo.work_tree.read_dir()?.next().is_none() {
         return Err(Box::new(io::Error::new(

@@ -28,6 +28,10 @@ pub struct Repository {
 }
 
 impl Repository {
+    pub fn for_working_directory() -> Result<Self, Error> {
+        std::env::current_dir().map(Repository::new)
+    }
+
     pub fn new(work_tree: PathBuf) -> Self {
         let root = work_tree.join(GIT_DIR);
         let objects = root.join(Path::new(OBJECT_DIR));
@@ -40,6 +44,10 @@ impl Repository {
             heads,
             head,
         }
+    }
+
+    pub fn find_object(kind: String, hash: String) -> Result<String, Error>{
+        Ok(hash)
     }
 
     fn hash_to_path(hash: &str) -> PathBuf {

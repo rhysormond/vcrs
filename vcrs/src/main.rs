@@ -18,7 +18,8 @@ enum SubCommand {
 
 #[derive(Clap)]
 struct Show {
-    hash: String,
+    kind: String,
+    object: String,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -26,6 +27,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match opts.subcmd {
         SubCommand::Init => init(),
-        SubCommand::Show(hash) => show(hash.hash),
+        SubCommand::Show(args) => show(args.kind, args.object),
     }
 }
