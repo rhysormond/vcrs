@@ -46,8 +46,14 @@ impl Repository {
         }
     }
 
-    pub fn find_object(kind: String, hash: String) -> Result<String, Error>{
+    pub fn find_object(kind: String, hash: String) -> Result<String, Error> {
         Ok(hash)
+    }
+
+    pub fn hash(content: &str) -> String {
+        let mut hasher = Sha1::new();
+        hasher.input_str(&*content);
+        hasher.result_str()
     }
 
     fn hash_to_path(hash: &str) -> PathBuf {
@@ -73,13 +79,11 @@ impl Repository {
     }
 
     pub fn write_object(&self, obj: Object) -> Result<String, Error> {
-        let contents = obj.serialize();
-        let mut hasher = Sha1::new();
-        hasher.input_str(&*contents);
-        let hash = hasher.result_str();
+        let content = obj.serialize();
+        let hash = Repository::hash(&content);
         let relative_path = Repository::hash_to_path(&*hash);
         let path = self.objects.join(relative_path);
-        Repository::write_zlib(path, &*contents).map(|_ok| hash)
+        Repository::write_zlib(path, &*content).map(|_ok| hash)
     }
 
     pub fn read_object(&self, hash: &str) -> Result<Object, Box<dyn std::error::Error>> {
