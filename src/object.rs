@@ -31,13 +31,15 @@ pub enum Object {
 
 impl Object {
     pub fn serialize(&self) -> String {
-        match self {
-            Self::Commit(body) => body,
-            Self::Tree(body) => body,
-            Self::Blob(body) => body,
-            Self::Tag(body) => body,
-        }
-        .to_string()
+        // TODO[Rhys] figure out how to deduplicate this with the deserialization match
+        let (kind, content) = match self {
+            Self::Blob(content) => ("blob", content),
+            Self::Commit(content) => ("commit", content),
+            Self::Tag(content) => ("tag", content),
+            Self::Tree(content) => ("tree", content),
+        };
+        let size = content.len();
+        format!("{}{}{}{}{}", kind, OBJECT_KIND_SEP, size, OBJECT_SIZE_SEP, content)
     }
 
     pub fn deserialize(body: String) -> Result<Self, Box<dyn Error>> {
@@ -55,10 +57,10 @@ impl Object {
         );
 
         match kind {
-            "commit" => Ok(Object::Commit(content)),
-            "tree" => Ok(Object::Tree(content)),
             "blob" => Ok(Object::Blob(content)),
+            "commit" => Ok(Object::Commit(content)),
             "tag" => Ok(Object::Tag(content)),
+            "tree" => Ok(Object::Tree(content)),
             other => Err(Box::new(DeserializationError {
                 thing: content,
                 reason: format!("Unsupported object type {}.", other),
