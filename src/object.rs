@@ -1,5 +1,7 @@
 use std::{error::Error, fmt};
 
+use regex::{Regex, RegexBuilder};
+
 const OBJECT_KIND_SEP: char = 0x20_u8 as char;
 const OBJECT_SIZE_SEP: char = 0x00_u8 as char;
 
@@ -23,23 +25,92 @@ impl fmt::Display for DeserializationError {
 
 #[derive(Debug)]
 pub enum Object {
-    Commit(String),
+    Commit(Commit),
     Tree(String),
     Blob(String),
     Tag(String),
 }
 
+#[derive(Debug)]
+pub struct Commit {
+    tree: String,
+    parent: String,
+    author: String,
+    committer: String,
+    gpgsig: Option<String>,
+    message: String,
+}
+
+impl Commit {
+    pub fn serialize(&self) -> String {
+        let maybe_gpgsig = self
+            .gpgsig
+            .as_ref()
+            .map(|sig| format!("gpgsig {}\n", sig))
+            .unwrap_or("".into());
+        format!(
+            "tree {}\nparent {}\nauthor {}\ncommitter {}\n{}\n{}\n",
+            self.tree, self.parent, self.author, self.committer, maybe_gpgsig, self.message,
+        )
+    }
+
+    pub fn deserialize(body: String) -> Result<Self, Box<dyn Error>> {
+        // TODO[Rhys] this could use some much cleverer parsing
+        println!("{}", body);
+        let regex = RegexBuilder::new(
+            r"(?x)
+            tree\ (?P<tree>[a-zA-Z0-9]*)\n
+            parent\ (?P<parent>[a-zA-Z0-9]*)\n
+            author\ (?P<author>.*)\n
+            committer\ (?P<committer>.*)\n
+            (gpgsig\ (?P<gpgsig>
+                -----BEGIN\ PGP\ SIGNATURE-----[\w\d\s+/=]*-----END\ PGP\ SIGNATURE-----
+            )\n)?\n
+            (?P<message>.*)
+        ",
+        )
+        .multi_line(true)
+        .build()
+        .unwrap();
+        let captures = regex.captures(&*body).unwrap();
+
+        Ok(Self {
+            tree: captures.name("tree").unwrap().as_str().into(),
+            parent: captures.name("parent").unwrap().as_str().into(),
+            author: captures.name("author").unwrap().as_str().into(),
+            committer: captures.name("committer").unwrap().as_str().into(),
+            gpgsig: captures.name("gpgsig").map(|cap| cap.as_str().into()),
+            message: captures.name("message").unwrap().as_str().into(),
+        })
+    }
+}
+
 impl Object {
+    pub fn new(kind: &str, content: String) -> Result<Self, Box<dyn Error>> {
+        match kind {
+            "blob" => Ok(Object::Blob(content)),
+            "commit" => Ok(Object::Commit(Commit::deserialize(content)?)),
+            "tag" => Ok(Object::Tag(content)),
+            "tree" => Ok(Object::Tree(content)),
+            other => Err(Box::new(DeserializationError {
+                thing: content,
+                reason: format!("Unsupported object type {}.", other),
+            })),
+        }
+    }
     pub fn serialize(&self) -> String {
         // TODO[Rhys] figure out how to deduplicate this with the deserialization match
         let (kind, content) = match self {
-            Self::Blob(content) => ("blob", content),
-            Self::Commit(content) => ("commit", content),
-            Self::Tag(content) => ("tag", content),
-            Self::Tree(content) => ("tree", content),
+            Self::Blob(content) => ("blob", content.clone()),
+            Self::Commit(content) => ("commit", content.serialize()),
+            Self::Tag(content) => ("tag", content.clone()),
+            Self::Tree(content) => ("tree", content.clone()),
         };
         let size = content.len();
-        format!("{}{}{}{}{}", kind, OBJECT_KIND_SEP, size, OBJECT_SIZE_SEP, content)
+        format!(
+            "{}{}{}{}{}",
+            kind, OBJECT_KIND_SEP, size, OBJECT_SIZE_SEP, content
+        )
     }
 
     pub fn deserialize(body: String) -> Result<Self, Box<dyn Error>> {
@@ -56,15 +127,6 @@ impl Object {
             "Content length was not equal to the encoded size."
         );
 
-        match kind {
-            "blob" => Ok(Object::Blob(content)),
-            "commit" => Ok(Object::Commit(content)),
-            "tag" => Ok(Object::Tag(content)),
-            "tree" => Ok(Object::Tree(content)),
-            other => Err(Box::new(DeserializationError {
-                thing: content,
-                reason: format!("Unsupported object type {}.", other),
-            })),
-        }
+        Self::new(kind, content)
     }
 }
