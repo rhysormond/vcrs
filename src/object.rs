@@ -34,11 +34,11 @@ pub enum Object {
 #[derive(Debug)]
 pub struct Commit {
     tree: String,
-    parent: Option<String>,
+    pub parent: Option<String>,
     author: String,
     committer: String,
     gpgsig: Option<String>,
-    message: String,
+    pub message: String,
 }
 
 impl Commit {

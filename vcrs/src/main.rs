@@ -2,7 +2,7 @@ use std::error::Error;
 
 use clap::Clap;
 
-use gitrs::{hash_object, init, show};
+use gitrs::{hash_object, init, log, show};
 
 #[derive(Clap)]
 struct Opts {
@@ -13,8 +13,14 @@ struct Opts {
 #[derive(Clap)]
 enum SubCommand {
     Init,
+    Log(Log),
     Show(Show),
     HashObject(HashObject),
+}
+
+#[derive(Clap)]
+struct Log {
+    hash: String,
 }
 
 #[derive(Clap)]
@@ -36,6 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match opts.subcmd {
         SubCommand::Init => init(),
+        SubCommand::Log(args) => log(args.hash),
         SubCommand::Show(args) => show(args.kind, args.object),
         SubCommand::HashObject(args) => hash_object(args.kind, args.file, args.write),
     }
