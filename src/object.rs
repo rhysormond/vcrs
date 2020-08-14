@@ -1,6 +1,6 @@
 use std::{error::Error, fmt};
 
-use regex::{Regex, RegexBuilder};
+use regex::RegexBuilder;
 
 const OBJECT_KIND_SEP: char = 0x20_u8 as char;
 const OBJECT_SIZE_SEP: char = 0x00_u8 as char;
@@ -34,7 +34,7 @@ pub enum Object {
 #[derive(Debug)]
 pub struct Commit {
     tree: String,
-    parent: String,
+    parent: Option<String>,
     author: String,
     committer: String,
     gpgsig: Option<String>,
@@ -43,24 +43,28 @@ pub struct Commit {
 
 impl Commit {
     pub fn serialize(&self) -> String {
+        let maybe_parent = self
+            .parent
+            .as_ref()
+            .map(|sig| format!("parent {}\n", sig))
+            .unwrap_or("".into());
         let maybe_gpgsig = self
             .gpgsig
             .as_ref()
             .map(|sig| format!("gpgsig {}\n", sig))
             .unwrap_or("".into());
         format!(
-            "tree {}\nparent {}\nauthor {}\ncommitter {}\n{}\n{}\n",
-            self.tree, self.parent, self.author, self.committer, maybe_gpgsig, self.message,
+            "tree {}\n{}author {}\ncommitter {}\n{}\n{}\n",
+            self.tree, maybe_parent, self.author, self.committer, maybe_gpgsig, self.message,
         )
     }
 
     pub fn deserialize(body: String) -> Result<Self, Box<dyn Error>> {
         // TODO[Rhys] this could use some much cleverer parsing
-        println!("{}", body);
         let regex = RegexBuilder::new(
             r"(?x)
             tree\ (?P<tree>[a-zA-Z0-9]*)\n
-            parent\ (?P<parent>[a-zA-Z0-9]*)\n
+            (parent\ (?P<parent>[a-zA-Z0-9]*)\n)?
             author\ (?P<author>.*)\n
             committer\ (?P<committer>.*)\n
             (gpgsig\ (?P<gpgsig>
@@ -76,7 +80,7 @@ impl Commit {
 
         Ok(Self {
             tree: captures.name("tree").unwrap().as_str().into(),
-            parent: captures.name("parent").unwrap().as_str().into(),
+            parent: captures.name("parent").map(|cap| cap.as_str().into()),
             author: captures.name("author").unwrap().as_str().into(),
             committer: captures.name("committer").unwrap().as_str().into(),
             gpgsig: captures.name("gpgsig").map(|cap| cap.as_str().into()),
