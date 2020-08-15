@@ -53,7 +53,6 @@ impl Leaf {
     }
 
     pub fn deserialize(body: Vec<u8>) -> Result<(Self, Vec<u8>), Box<dyn Error>> {
-        // TODO[Rhys] this duplicates a lot of logic from object::deserialize
         let mut iter = body.iter();
         let mode = take_string(&mut iter, ASCII_SPACE)?;
         let path = take_string(&mut iter, ASCII_NULL)?;
