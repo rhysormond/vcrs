@@ -2,7 +2,7 @@ use std::error::Error;
 
 #[derive(Debug, PartialEq)]
 pub struct Blob {
-    content: String,
+    pub content: String,
 }
 
 impl Blob {

@@ -1,4 +1,4 @@
-use std::{error::Error, fmt};
+use std::error::Error;
 
 pub mod blob;
 pub mod commit;
@@ -10,7 +10,7 @@ mod util;
 use crate::object::util::take_string;
 use constant::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Object {
     Blob(blob::Blob),
     Commit(commit::Commit),
@@ -60,5 +60,37 @@ impl Object {
         );
 
         Self::new(kind, content)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::object::{blob, Object, Object::Blob};
+
+    #[test]
+    fn serializes() {
+        let blob = Blob(blob::Blob {
+            content: String::from("some blob"),
+        });
+        let serialized = String::from_utf8(blob.serialize()).unwrap();
+        let expected = "blob 9\u{0}some blob";
+        assert_eq!(serialized, expected)
+    }
+
+    #[test]
+    fn deserializes() {
+        let serialized = "blob 9\u{0}some blob";
+        let expected = Blob(blob::Blob {
+            content: String::from("some blob"),
+        });
+        let blob = Object::deserialize(serialized.into()).unwrap();
+        assert_eq!(blob, expected)
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_size_is_incorrect() {
+        let serialized = "blob 8\u{0}some blob";
+        Object::deserialize(serialized.into()).unwrap();
     }
 }
