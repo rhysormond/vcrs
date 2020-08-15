@@ -12,22 +12,31 @@ pub struct Commit {
 }
 
 impl Commit {
+    fn serialize_field(field_name: &str, obj: &String) -> String {
+        format!("{} {}\n", field_name, obj)
+    }
+
+    fn serialize_optional_field(field_name: &str, obj: &Option<String>) -> String {
+        obj.as_ref()
+            .map(|sig| format!("{} {}\n", field_name, sig))
+            .unwrap_or("".into())
+    }
+
     pub fn serialize(&self) -> Vec<u8> {
-        let maybe_parent = self
-            .parent
-            .as_ref()
-            .map(|sig| format!("parent {}\n", sig))
-            .unwrap_or("".into());
-        let maybe_gpgsig = self
-            .gpgsig
-            .as_ref()
-            .map(|sig| format!("gpgsig {}\n", sig))
-            .unwrap_or("".into());
-        format!(
-            "tree {}\n{}author {}\ncommitter {}\n{}\n{}",
-            self.tree, maybe_parent, self.author, self.committer, maybe_gpgsig, self.message,
-        )
-        .into_bytes()
+        // TODO[Rhys] find a way to get rid of the unnecessary cloning here
+        let fields = vec![
+            Self::serialize_field("tree", &self.tree),
+            Self::serialize_optional_field("parent", &self.parent),
+            Self::serialize_field("author", &self.author),
+            Self::serialize_field("committer", &self.committer),
+            Self::serialize_optional_field("gpgsig", &self.gpgsig),
+            String::from("\n"),
+            self.message.clone(),
+        ];
+        fields
+            .iter()
+            .flat_map(|f| f.clone().into_bytes().into_iter())
+            .collect()
     }
 
     pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
@@ -65,6 +74,30 @@ impl Commit {
 #[cfg(test)]
 mod tests {
     use crate::object::commit::Commit;
+
+    #[test]
+    fn serialize_fields() {
+        assert_eq!(
+            Commit::serialize_field(&"field", &String::from("value")),
+            String::from("field value\n")
+        );
+    }
+
+    #[test]
+    fn serialize_optional_field_when_defined() {
+        assert_eq!(
+            Commit::serialize_optional_field(&"field", &Some(String::from("value"))),
+            String::from("field value\n")
+        );
+    }
+
+    #[test]
+    fn not_serialize_optional_field_when_not_defined() {
+        assert_eq!(
+            Commit::serialize_optional_field(&"field", &None),
+            String::from("")
+        );
+    }
 
     #[test]
     fn can_roundtrip_basic_commits() {
