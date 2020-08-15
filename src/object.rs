@@ -55,10 +55,12 @@ impl Object {
             Self::Tag(content) => ("tag", content.serialize()),
             Self::Tree(content) => ("tree", content.serialize()),
         };
-        let size: u8 = content.len() as u8;
+        let size = content.len().to_string();
         [
             kind.as_bytes().to_vec(),
-            vec![OBJECT_KIND_SEP, size, OBJECT_SIZE_SEP],
+            vec![ASCII_SPACE],
+            size.as_bytes().to_vec(),
+            vec![ASCII_NULL],
             content.to_vec(),
         ]
         .concat()
