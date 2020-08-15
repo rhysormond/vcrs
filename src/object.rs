@@ -21,20 +21,20 @@ pub enum Object {
 impl Object {
     pub fn new(kind: String, content: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         match kind.as_str() {
-            "blob" => Ok(Object::Blob(blob::Blob::deserialize(content)?)),
-            "commit" => Ok(Object::Commit(commit::Commit::deserialize(content)?)),
-            "tag" => Ok(Object::Tag(tag::Tag::deserialize(content)?)),
-            "tree" => Ok(Object::Tree(tree::Tree::deserialize(content)?)),
+            NAME_BLOB => Ok(Object::Blob(blob::Blob::deserialize(content)?)),
+            NAME_COMMIT => Ok(Object::Commit(commit::Commit::deserialize(content)?)),
+            NAME_TAG => Ok(Object::Tag(tag::Tag::deserialize(content)?)),
+            NAME_TREE => Ok(Object::Tree(tree::Tree::deserialize(content)?)),
             other => panic!(format!("Object type {} is not valid.", other)),
         }
     }
     pub fn serialize(&self) -> Vec<u8> {
         // TODO[Rhys] figure out how to deduplicate this with the deserialization match
         let (kind, content) = match self {
-            Self::Blob(content) => ("blob", content.serialize()),
-            Self::Commit(content) => ("commit", content.serialize()),
-            Self::Tag(content) => ("tag", content.serialize()),
-            Self::Tree(content) => ("tree", content.serialize()),
+            Self::Blob(content) => (NAME_BLOB, content.serialize()),
+            Self::Commit(content) => (NAME_COMMIT, content.serialize()),
+            Self::Tag(content) => (NAME_TAG, content.serialize()),
+            Self::Tree(content) => (NAME_TREE, content.serialize()),
         };
         let size = content.len().to_string();
         [
