@@ -1,5 +1,5 @@
-use std::error::Error;
 use regex::RegexBuilder;
+use std::error::Error;
 
 #[derive(Debug)]
 pub struct Commit {
@@ -26,7 +26,8 @@ impl Commit {
         format!(
             "tree {}\n{}author {}\ncommitter {}\n{}\n{}\n",
             self.tree, maybe_parent, self.author, self.committer, maybe_gpgsig, self.message,
-        ).into_bytes()
+        )
+        .into_bytes()
     }
 
     pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
@@ -44,9 +45,9 @@ impl Commit {
             (?P<message>.*)
         ",
         )
-            .multi_line(true)
-            .build()
-            .unwrap();
+        .multi_line(true)
+        .build()
+        .unwrap();
         let captures = regex.captures(&*content).unwrap();
 
         Ok(Self {
@@ -59,4 +60,3 @@ impl Commit {
         })
     }
 }
-

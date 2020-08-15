@@ -56,14 +56,27 @@ impl Object {
             Self::Tree(content) => ("tree", content.serialize()),
         };
         let size: u8 = content.len() as u8;
-        [kind.as_bytes().to_vec(), vec![OBJECT_KIND_SEP, size, OBJECT_SIZE_SEP], content.to_vec()].concat()
+        [
+            kind.as_bytes().to_vec(),
+            vec![OBJECT_KIND_SEP, size, OBJECT_SIZE_SEP],
+            content.to_vec(),
+        ]
+        .concat()
     }
 
     pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         let mut iter = body.iter();
-        let kind_raw: Vec<u8> = iter.by_ref().take_while(|&b| *b != OBJECT_KIND_SEP).cloned().collect();
+        let kind_raw: Vec<u8> = iter
+            .by_ref()
+            .take_while(|&b| *b != OBJECT_KIND_SEP)
+            .cloned()
+            .collect();
         let kind = String::from_utf8(kind_raw)?;
-        let size_raw: Vec<u8> = iter.by_ref().take_while(|&b| *b != OBJECT_SIZE_SEP).cloned().collect();
+        let size_raw: Vec<u8> = iter
+            .by_ref()
+            .take_while(|&b| *b != OBJECT_SIZE_SEP)
+            .cloned()
+            .collect();
         let size: usize = String::from_utf8(size_raw)?.parse()?;
         let content: Vec<u8> = iter.cloned().collect();
 

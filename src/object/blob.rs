@@ -11,11 +11,8 @@ impl Blob {
     }
 
     pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
-        Ok(
-            Self {
-                content: String::from_utf8(body)?,
-            }
-        )
+        Ok(Self {
+            content: String::from_utf8(body)?,
+        })
     }
 }
-

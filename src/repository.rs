@@ -65,7 +65,9 @@ impl Repository {
         let file = File::open(path)?;
         let mut decoder = ZlibDecoder::new(BufReader::new(&file));
         let mut content = vec![];
-        decoder.read_to_end(&mut content).expect("Unable to read file.");
+        decoder
+            .read_to_end(&mut content)
+            .expect("Unable to read file.");
         Ok(content)
     }
 
