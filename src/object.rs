@@ -7,26 +7,8 @@ pub mod tag;
 pub mod tree;
 mod util;
 
-use constant::*;
 use crate::object::util::take_string;
-
-#[derive(Debug)]
-struct DeserializationError {
-    thing: String,
-    reason: String,
-}
-
-impl Error for DeserializationError {}
-
-impl fmt::Display for DeserializationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Could not deserialize \n {} \n because \n {}",
-            self.thing, self.reason
-        )
-    }
-}
+use constant::*;
 
 #[derive(Debug)]
 pub enum Object {
@@ -43,10 +25,7 @@ impl Object {
             "commit" => Ok(Object::Commit(commit::Commit::deserialize(content)?)),
             "tag" => Ok(Object::Tag(tag::Tag::deserialize(content)?)),
             "tree" => Ok(Object::Tree(tree::Tree::deserialize(content)?)),
-            other => Err(Box::new(DeserializationError {
-                thing: String::from_utf8(content)?,
-                reason: format!("Unsupported object type {}.", other),
-            })),
+            other => panic!(format!("Object type {} is not valid.", other)),
         }
     }
     pub fn serialize(&self) -> Vec<u8> {

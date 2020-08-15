@@ -1,7 +1,11 @@
 use std::slice::Iter;
 
-pub fn take_string(iter: &mut Iter<u8>, delimiter: u8) -> Result<String, std::string::FromUtf8Error> {
-    let raw = iter.by_ref()
+pub fn take_string(
+    iter: &mut Iter<u8>,
+    delimiter: u8,
+) -> Result<String, std::string::FromUtf8Error> {
+    let raw = iter
+        .by_ref()
         .take_while(|&b| *b != delimiter)
         .cloned()
         .collect();
