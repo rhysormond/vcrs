@@ -16,6 +16,7 @@ impl Tag {
         })
     }
 }
+
 #[cfg(test)]
 mod tests {
     use crate::object::tag::Tag;

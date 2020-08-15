@@ -2,7 +2,7 @@ use std::error::Error;
 
 use clap::Clap;
 
-use gitrs::{hash_object, init, log, cat_file};
+use gitrs::{cat_file, hash_object, init, log};
 
 #[derive(Clap)]
 struct Opts {

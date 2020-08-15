@@ -115,9 +115,7 @@ mod tests {
 
     #[test]
     fn round_trips_empty_tree() {
-        let empty = Tree {
-            leaves: vec![],
-        };
+        let empty = Tree { leaves: vec![] };
         let tree = Tree::deserialize(vec![]).unwrap();
         assert_eq!(tree, empty);
         assert_eq!(tree.serialize(), vec![]);
