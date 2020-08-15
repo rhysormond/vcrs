@@ -1,12 +1,12 @@
+use std::{error::Error, fmt};
+
+pub mod constant;
 pub mod blob;
 pub mod commit;
 pub mod tag;
 pub mod tree;
 
-use std::{error::Error, fmt};
-
-const OBJECT_KIND_SEP: u8 = 0x20;
-const OBJECT_SIZE_SEP: u8 = 0x00;
+use constant::*;
 
 #[derive(Debug)]
 struct DeserializationError {
@@ -70,13 +70,13 @@ impl Object {
         let mut iter = body.iter();
         let kind_raw: Vec<u8> = iter
             .by_ref()
-            .take_while(|&b| *b != OBJECT_KIND_SEP)
+            .take_while(|&b| *b != ASCII_SPACE)
             .cloned()
             .collect();
         let kind = String::from_utf8(kind_raw)?;
         let size_raw: Vec<u8> = iter
             .by_ref()
-            .take_while(|&b| *b != OBJECT_SIZE_SEP)
+            .take_while(|&b| *b != ASCII_NULL)
             .cloned()
             .collect();
         let size: usize = String::from_utf8(size_raw)?.parse()?;
