@@ -25,7 +25,7 @@ impl Tree {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Leaf {
     mode: String,
     path: String,
@@ -66,6 +66,7 @@ impl Leaf {
 
 #[cfg(test)]
 mod tests {
+    use crate::object::constant::{ASCII_NULL, ASCII_SPACE};
     use crate::object::tree::Leaf;
 
     #[test]
@@ -86,5 +87,29 @@ mod tests {
             74,
         ];
         assert_eq!(Leaf::encode_hash(&raw), parsed)
+    }
+
+    #[test]
+    fn round_trips_leaf() {
+        let mode: Vec<u8> = vec![49, 48, 48, 54, 52, 52];
+        let path: Vec<u8> = vec![46, 103, 105, 116, 105, 103, 110, 111, 114, 101];
+        let hash: Vec<u8> = vec![
+            234, 140, 75, 247, 243, 95, 111, 119, 247, 93, 146, 173, 140, 232, 52, 159, 110, 129,
+            221, 186,
+        ];
+        let serialized: Vec<u8> = vec![mode, vec![ASCII_SPACE], path, vec![ASCII_NULL], hash]
+            .iter()
+            .flatten()
+            .cloned()
+            .collect();
+        let deserialized = Leaf {
+            mode: String::from("100644"),
+            path: String::from(".gitignore"),
+            hash: String::from("ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba"),
+        };
+        let (leaf, remainder) = Leaf::deserialize(serialized.clone()).unwrap();
+        assert!(remainder.is_empty());
+        assert_eq!(leaf, deserialized);
+        assert_eq!(leaf.serialize(), serialized)
     }
 }
