@@ -1,8 +1,8 @@
 use std::{error::Error, fmt};
 
-pub mod constant;
 pub mod blob;
 pub mod commit;
+pub mod constant;
 pub mod tag;
 pub mod tree;
 
