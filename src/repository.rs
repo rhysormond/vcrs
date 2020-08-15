@@ -50,9 +50,9 @@ impl Repository {
         Ok(hash)
     }
 
-    pub fn hash(content: &str) -> String {
+    pub fn hash(content: &Vec<u8>) -> String {
         let mut hasher = Sha1::new();
-        hasher.input_str(&*content);
+        hasher.input(content);
         hasher.result_str()
     }
 
@@ -61,19 +61,19 @@ impl Repository {
         Path::new(&format!("{}/{}", dir, file)).into()
     }
 
-    fn read_zlib(path: PathBuf) -> Result<String, Error> {
+    fn read_zlib(path: PathBuf) -> Result<Vec<u8>, Error> {
         let file = File::open(path)?;
         let mut decoder = ZlibDecoder::new(BufReader::new(&file));
-        let mut contents = String::new();
-        decoder.read_to_string(&mut contents)?;
-        Ok(contents)
+        let mut content = vec![];
+        decoder.read_to_end(&mut content).expect("Unable to read file.");
+        Ok(content)
     }
 
-    fn write_zlib(path: PathBuf, contents: &str) -> Result<(), Error> {
+    fn write_zlib(path: PathBuf, content: &Vec<u8>) -> Result<(), Error> {
         fs::create_dir_all(path.parent().unwrap())?;
         let file = File::create(path)?;
         let mut encoder = ZlibEncoder::new(BufWriter::new(&file), Compression::default());
-        encoder.write_all(contents.as_ref())?;
+        encoder.write_all(content)?;
         encoder.finish()?;
         Ok(())
     }
@@ -83,13 +83,13 @@ impl Repository {
         let hash = Repository::hash(&content);
         let relative_path = Repository::hash_to_path(&*hash);
         let path = self.objects.join(relative_path);
-        Repository::write_zlib(path, &*content).map(|_ok| hash)
+        Repository::write_zlib(path, &content).map(|_ok| hash)
     }
 
     pub fn read_object(&self, hash: &str) -> Result<Object, Box<dyn std::error::Error>> {
         let relative_path = Repository::hash_to_path(hash);
         let path = self.objects.join(relative_path);
-        let contents = Repository::read_zlib(path)?;
-        Object::deserialize(contents)
+        let content = Repository::read_zlib(path)?;
+        Object::deserialize(content)
     }
 }
