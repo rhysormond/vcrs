@@ -5,8 +5,10 @@ pub mod commit;
 pub mod constant;
 pub mod tag;
 pub mod tree;
+mod util;
 
 use constant::*;
+use crate::object::util::take_string;
 
 #[derive(Debug)]
 struct DeserializationError {
@@ -68,18 +70,8 @@ impl Object {
 
     pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         let mut iter = body.iter();
-        let kind_raw: Vec<u8> = iter
-            .by_ref()
-            .take_while(|&b| *b != ASCII_SPACE)
-            .cloned()
-            .collect();
-        let kind = String::from_utf8(kind_raw)?;
-        let size_raw: Vec<u8> = iter
-            .by_ref()
-            .take_while(|&b| *b != ASCII_NULL)
-            .cloned()
-            .collect();
-        let size: usize = String::from_utf8(size_raw)?.parse()?;
+        let kind = take_string(&mut iter, ASCII_SPACE)?;
+        let size: usize = take_string(&mut iter, ASCII_NULL)?.parse()?;
         let content: Vec<u8> = iter.cloned().collect();
 
         assert_eq!(

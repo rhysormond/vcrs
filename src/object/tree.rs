@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use crate::object::constant::*;
+use crate::object::util::take_string;
 
 #[derive(Debug)]
 pub struct Tree {
@@ -54,18 +55,8 @@ impl Leaf {
     pub fn deserialize(body: Vec<u8>) -> Result<(Self, Vec<u8>), Box<dyn Error>> {
         // TODO[Rhys] this duplicates a lot of logic from object::deserialize
         let mut iter = body.iter();
-        let mode_raw: Vec<u8> = iter
-            .by_ref()
-            .take_while(|&b| *b != ASCII_SPACE)
-            .cloned()
-            .collect();
-        let mode = String::from_utf8(mode_raw)?;
-        let path_raw: Vec<u8> = iter
-            .by_ref()
-            .take_while(|&b| *b != ASCII_NULL)
-            .cloned()
-            .collect();
-        let path = String::from_utf8(path_raw)?;
+        let mode = take_string(&mut iter, ASCII_SPACE)?;
+        let path = take_string(&mut iter, ASCII_NULL)?;
         let hash_raw: Vec<u8> = iter.by_ref().take(20).cloned().collect();
         let hash = Self::decode_hash(&hash_raw);
         let remainder: Vec<u8> = iter.cloned().collect();
