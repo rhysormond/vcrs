@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::object::constant::*;
 use crate::object::util::take_string;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Tree {
     leaves: Vec<Leaf>,
 }
@@ -67,7 +67,7 @@ impl Leaf {
 #[cfg(test)]
 mod tests {
     use crate::object::constant::{ASCII_NULL, ASCII_SPACE};
-    use crate::object::tree::Leaf;
+    use crate::object::tree::{Leaf, Tree};
 
     #[test]
     fn decodes_hash() {
@@ -111,5 +111,15 @@ mod tests {
         assert!(remainder.is_empty());
         assert_eq!(leaf, deserialized);
         assert_eq!(leaf.serialize(), serialized)
+    }
+
+    #[test]
+    fn round_trips_empty_tree() {
+        let empty = Tree {
+            leaves: vec![],
+        };
+        let tree = Tree::deserialize(vec![]).unwrap();
+        assert_eq!(tree, empty);
+        assert_eq!(tree.serialize(), vec![]);
     }
 }
