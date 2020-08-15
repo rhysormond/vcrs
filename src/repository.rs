@@ -95,3 +95,25 @@ impl Repository {
         Object::deserialize(content)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::repository::Repository;
+    use std::path::Path;
+
+    #[test]
+    fn hashes() {
+        let data = String::from("test");
+        let expected = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3";
+        let hash = Repository::hash(&data.into());
+        assert_eq!(hash, expected)
+    }
+
+    #[test]
+    fn converts_hash_to_path() {
+        let hash = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3";
+        let expected = Path::new("a9/4a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+        let path = Repository::hash_to_path(hash);
+        assert_eq!(path, expected)
+    }
+}
