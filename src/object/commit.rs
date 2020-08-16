@@ -4,6 +4,7 @@ use std::error::Error;
 #[derive(Debug, PartialEq)]
 pub struct Commit {
     tree: String,
+    // TODO[Rhys] this should actually be a vec as commits can have zero to many parents
     pub parent: Option<String>,
     author: String,
     committer: String,
