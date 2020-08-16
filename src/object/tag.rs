@@ -10,9 +10,9 @@ impl Tag {
         self.content.clone().into_bytes()
     }
 
-    pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn deserialize(bytes: Vec<u8>) -> Result<Self, Box<dyn Error>> {
         Ok(Self {
-            content: String::from_utf8(body)?,
+            content: String::from_utf8(bytes)?,
         })
     }
 }

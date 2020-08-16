@@ -40,8 +40,8 @@ impl Commit {
             .collect()
     }
 
-    pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
-        let content = String::from_utf8(body)?;
+    pub fn deserialize(bytes: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+        let content = String::from_utf8(bytes)?;
         // TODO[Rhys] this could use some much cleverer parsing
         let regex = RegexBuilder::new(
             r"(?x)

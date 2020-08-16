@@ -50,9 +50,9 @@ impl Repository {
         Ok(hash)
     }
 
-    pub fn hash(content: &Vec<u8>) -> String {
+    pub fn hash(bytes: &Vec<u8>) -> String {
         let mut hasher = Sha1::new();
-        hasher.input(content);
+        hasher.input(bytes);
         hasher.result_str()
     }
 
@@ -64,18 +64,18 @@ impl Repository {
     fn read_zlib(path: PathBuf) -> Result<Vec<u8>, Error> {
         let file = File::open(path)?;
         let mut decoder = ZlibDecoder::new(BufReader::new(&file));
-        let mut content = vec![];
+        let mut bytes = vec![];
         decoder
-            .read_to_end(&mut content)
+            .read_to_end(&mut bytes)
             .expect("Unable to read file.");
-        Ok(content)
+        Ok(bytes)
     }
 
-    fn write_zlib(path: PathBuf, content: &Vec<u8>) -> Result<(), Error> {
+    fn write_zlib(path: PathBuf, bytes: &Vec<u8>) -> Result<(), Error> {
         fs::create_dir_all(path.parent().unwrap())?;
         let file = File::create(path)?;
         let mut encoder = ZlibEncoder::new(BufWriter::new(&file), Compression::default());
-        encoder.write_all(content)?;
+        encoder.write_all(bytes)?;
         encoder.finish()?;
         Ok(())
     }
@@ -91,8 +91,8 @@ impl Repository {
     pub fn read_object(&self, hash: &str) -> Result<Object, Box<dyn std::error::Error>> {
         let relative_path = Repository::hash_to_path(hash);
         let path = self.objects.join(relative_path);
-        let content = Repository::read_zlib(path)?;
-        Object::deserialize(content)
+        let bytes = Repository::read_zlib(path)?;
+        Object::deserialize(bytes.as_slice())
     }
 }
 

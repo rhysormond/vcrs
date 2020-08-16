@@ -19,8 +19,8 @@ impl Tree {
         self.leaves.iter().flat_map(|l| l.serialize()).collect()
     }
 
-    pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
-        let mut remainder: &[u8] = body.as_slice();
+    pub fn deserialize(bytes: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+        let mut remainder: &[u8] = bytes.as_slice();
         let mut leaves: Vec<Leaf> = vec![];
         while !remainder.is_empty() {
             let (leaf, rest) = Leaf::deserialize(remainder)?;
@@ -39,12 +39,12 @@ struct Leaf {
 }
 
 impl Leaf {
-    fn encode_hash(raw: &String) -> Vec<u8> {
-        hex::decode(raw).expect("Unable to encode hash.")
+    fn encode_hash(hash: &String) -> Vec<u8> {
+        hex::decode(hash).expect("Unable to encode hash.")
     }
 
-    fn decode_hash(raw: &[u8]) -> String {
-        hex::encode(raw)
+    fn decode_hash(bytes: &[u8]) -> String {
+        hex::encode(bytes)
     }
 
     pub fn serialize(&self) -> Vec<u8> {
@@ -78,8 +78,8 @@ impl Leaf {
         })(input)
     }
 
-    pub fn deserialize(body: &[u8]) -> Result<(Self, &[u8]), Box<dyn Error>> {
-        let remainder = body;
+    pub fn deserialize(bytes: &[u8]) -> Result<(Self, &[u8]), Box<dyn Error>> {
+        let remainder = bytes;
         let (remainder, mode) = Leaf::deserialize_mode(remainder).unwrap();
         // Note[Rhys] we slice remainder here to drop the space delimiter
         let (remainder, path) = Leaf::deserialize_path(&remainder[1..]).unwrap();
