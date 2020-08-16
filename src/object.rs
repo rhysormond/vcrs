@@ -1,14 +1,14 @@
 use std::error::Error;
 
+use nom::{bytes::complete::take_while, combinator::map_res, IResult};
+
+use constant::*;
+
 pub mod blob;
 pub mod commit;
 pub mod constant;
 pub mod tag;
 pub mod tree;
-mod util;
-
-use crate::object::util::take_string;
-use constant::*;
 
 #[derive(Debug, PartialEq)]
 pub enum Object {
@@ -47,11 +47,26 @@ impl Object {
         .concat()
     }
 
-    pub fn deserialize(body: Vec<u8>) -> Result<Self, Box<dyn Error>> {
-        let mut iter = body.iter();
-        let kind = take_string(&mut iter, ASCII_SPACE)?;
-        let size: usize = take_string(&mut iter, ASCII_NULL)?.parse()?;
-        let content: Vec<u8> = iter.cloned().collect();
+    fn deserialize_kind(input: &[u8]) -> IResult<&[u8], String> {
+        map_res(take_while(|c| c != ASCII_SPACE), |c: &[u8]| {
+            String::from_utf8(c.to_vec())
+        })(input)
+    }
+
+    fn deserialize_size(input: &[u8]) -> IResult<&[u8], usize> {
+        // TODO[Rhys] this &[u8] -> usize conversion is pretty sloppy
+        map_res(take_while(|c| c != ASCII_NULL), |c: &[u8]| {
+            String::from_utf8(c.to_vec()).unwrap().parse()
+        })(input)
+    }
+
+    pub fn deserialize(bytes: &[u8]) -> Result<Self, Box<dyn Error>> {
+        let remainder = bytes;
+        let (remainder, kind) = Object::deserialize_kind(remainder).unwrap();
+        // Note[Rhys] we slice remainder here to drop the space delimiter
+        let (remainder, size) = Object::deserialize_size(&remainder[1..]).unwrap();
+        // Note[Rhys] we slice remainder here to drop the null delimiter
+        let content = remainder[1..].to_vec();
 
         assert_eq!(
             size,
@@ -65,7 +80,24 @@ impl Object {
 
 #[cfg(test)]
 mod tests {
+    use crate::object::constant::{ASCII_NULL, ASCII_SPACE};
     use crate::object::{blob, Object, Object::Blob};
+
+    #[test]
+    fn deserializes_kind() {
+        let raw = [116, 114, 101, 101, ASCII_SPACE];
+        let (remainder, kind) = Object::deserialize_kind(&raw).unwrap();
+        assert_eq!(kind, "tree");
+        assert_eq!(remainder, [ASCII_SPACE]);
+    }
+
+    #[test]
+    fn deserializes_size() {
+        let raw = [49, 50, 51, ASCII_NULL];
+        let (remainder, size) = Object::deserialize_size(&raw).unwrap();
+        assert_eq!(size, 123);
+        assert_eq!(remainder, [ASCII_NULL]);
+    }
 
     #[test]
     fn serializes() {
@@ -83,7 +115,7 @@ mod tests {
         let expected = Blob(blob::Blob {
             content: String::from("some blob"),
         });
-        let blob = Object::deserialize(serialized.into()).unwrap();
+        let blob = Object::deserialize(serialized.as_bytes()).unwrap();
         assert_eq!(blob, expected)
     }
 
@@ -91,6 +123,6 @@ mod tests {
     #[should_panic]
     fn panics_when_size_is_incorrect() {
         let serialized = "blob 8\u{0}some blob";
-        Object::deserialize(serialized.into()).unwrap();
+        Object::deserialize(serialized.as_bytes()).unwrap();
     }
 }
