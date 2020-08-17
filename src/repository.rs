@@ -96,6 +96,12 @@ impl Repository {
         Ok(self.find_ref(&name).unwrap_or(name))
     }
 
+    // TODO[Rhys] this really begs for a first-classed concept of refs
+    pub fn set_head(&self, head: &str) -> Result<(), Error> {
+        let mut file = File::create(&self.head)?;
+        file.write_all(head.as_bytes())
+    }
+
     pub fn hash(bytes: &[u8]) -> String {
         let mut hasher = Sha1::new();
         hasher.input(bytes);
