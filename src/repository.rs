@@ -90,8 +90,9 @@ impl Repository {
     }
 
     pub fn set_head(&self, head: &Reference) -> Result<(), Error> {
-        let mut file = File::create(&self.head)?;
-        file.write_all(head.serialize().as_bytes())
+        // Note[Rhys] serializing the content early means we can fail before blanking the HEAD file
+        let content = head.serialize();
+        File::create(&self.head)?.write_all(content.as_bytes())
     }
 
     pub fn hash(bytes: &[u8]) -> String {
