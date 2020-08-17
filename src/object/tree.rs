@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::num::ParseIntError;
 
 use nom::{
@@ -20,7 +19,7 @@ impl Tree {
         self.leaves.iter().flat_map(|l| l.serialize()).collect()
     }
 
-    pub fn deserialize(bytes: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn deserialize(bytes: Vec<u8>) -> Self {
         let mut remainder: &[u8] = bytes.as_slice();
         let mut leaves: Vec<Leaf> = vec![];
         while !remainder.is_empty() {
@@ -28,7 +27,7 @@ impl Tree {
             leaves.push(leaf);
             remainder = rest
         }
-        Ok(Self { leaves })
+        Self { leaves }
     }
 }
 
@@ -221,7 +220,7 @@ mod tests {
     #[test]
     fn round_trips_empty_tree() {
         let empty = Tree { leaves: vec![] };
-        let tree = Tree::deserialize(vec![]).unwrap();
+        let tree = Tree::deserialize(vec![]);
         assert_eq!(tree, empty);
         assert_eq!(tree.serialize(), vec![]);
     }

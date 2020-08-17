@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use clap::Clap;
 
 use gitrs::{cat_file, checkout, hash_object, init, log};
@@ -42,7 +40,7 @@ struct HashObject {
     write: bool,
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let opts: Opts = Opts::parse();
 
     match opts.subcmd {

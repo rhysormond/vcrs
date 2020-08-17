@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use regex::Regex;
 
 #[derive(Debug, PartialEq)]
@@ -18,18 +16,18 @@ impl Reference {
         }
     }
 
-    pub fn from_name(name: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn from_name(name: &str) -> Self {
         let reference = match name {
             "HEAD" => Reference::Head,
             head if head.starts_with("refs/heads/") => Reference::Ref(head.to_string()),
             commit => Reference::Commit(commit.to_string()),
         };
-        Ok(reference)
+        reference
     }
 
-    pub fn from_file(body: &str) -> Result<Self, Box<dyn Error>> {
-        let ref_regex = Regex::new(r"^ref: (.*)\n$")?;
-        let commit_regex = Regex::new(r"^([a-z0-9]*)\n$")?;
+    pub fn from_file(body: &str) -> Self {
+        let ref_regex = Regex::new(r"^ref: (.*)\n$").unwrap();
+        let commit_regex = Regex::new(r"^([a-z0-9]*)\n$").unwrap();
 
         let maybe_match = ref_regex.captures(body).map(|c| c.get(1)).flatten();
 
@@ -45,7 +43,7 @@ impl Reference {
                 Reference::Commit(hash.as_str().to_string())
             }
         };
-        Ok(reference)
+        reference
     }
 }
 
@@ -57,7 +55,7 @@ mod tests {
     fn round_trips_commits() {
         let data = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3\n";
         let expected = Reference::Commit("a94a8fe5ccb19ba61c4c0873d391e987982fbbd3".to_string());
-        let deserialized = Reference::from_file(data).unwrap();
+        let deserialized = Reference::from_file(data);
         assert_eq!(deserialized, expected);
         assert_eq!(deserialized.serialize(), data)
     }
@@ -66,7 +64,7 @@ mod tests {
     fn round_trips_refs() {
         let data = "ref: refs/heads/master\n";
         let expected = Reference::Ref("refs/heads/master".to_string());
-        let deserialized = Reference::from_file(data).unwrap();
+        let deserialized = Reference::from_file(data);
         assert_eq!(deserialized, expected);
         assert_eq!(deserialized.serialize(), data)
     }

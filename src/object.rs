@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use nom::{bytes::complete::take_while, combinator::map_res, sequence::tuple, IResult};
 
 use constant::*;
@@ -19,15 +17,16 @@ pub enum Object {
 }
 
 impl Object {
-    pub fn new(kind: String, content: Vec<u8>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(kind: String, content: Vec<u8>) -> Self {
         match kind.as_str() {
-            NAME_BLOB => Ok(Object::Blob(blob::Blob::deserialize(content)?)),
-            NAME_COMMIT => Ok(Object::Commit(commit::Commit::deserialize(content)?)),
-            NAME_TAG => Ok(Object::Tag(tag::Tag::deserialize(content)?)),
-            NAME_TREE => Ok(Object::Tree(tree::Tree::deserialize(content)?)),
+            NAME_BLOB => Object::Blob(blob::Blob::deserialize(content)),
+            NAME_COMMIT => Object::Commit(commit::Commit::deserialize(content)),
+            NAME_TAG => Object::Tag(tag::Tag::deserialize(content)),
+            NAME_TREE => Object::Tree(tree::Tree::deserialize(content)),
             other => panic!(format!("Object type {} is not valid.", other)),
         }
     }
+
     pub fn serialize(&self) -> Vec<u8> {
         // TODO[Rhys] figure out how to deduplicate this with the deserialization match
         let (kind, content) = match self {
@@ -69,7 +68,7 @@ impl Object {
         )
     }
 
-    pub fn deserialize(bytes: &[u8]) -> Result<Self, Box<dyn Error>> {
+    pub fn deserialize(bytes: &[u8]) -> Self {
         // TODO[Rhys] this shouldn't unwrap but lifetimes for bytes gets weird
         let (remainder, (kind, size)) =
             tuple((Object::parse_kind, Object::parse_size))(bytes).unwrap();
@@ -123,7 +122,7 @@ mod tests {
         let expected = Blob(blob::Blob {
             content: "some blob".to_string(),
         });
-        let blob = Object::deserialize(serialized.as_bytes()).unwrap();
+        let blob = Object::deserialize(serialized.as_bytes());
         assert_eq!(blob, expected)
     }
 
@@ -131,6 +130,6 @@ mod tests {
     #[should_panic]
     fn panics_when_size_is_incorrect() {
         let serialized = "blob 8\u{0}some blob";
-        Object::deserialize(serialized.as_bytes()).unwrap();
+        Object::deserialize(serialized.as_bytes());
     }
 }

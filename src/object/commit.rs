@@ -1,5 +1,4 @@
 use regex::RegexBuilder;
-use std::error::Error;
 
 #[derive(Debug, PartialEq)]
 pub struct Commit {
@@ -40,8 +39,8 @@ impl Commit {
             .collect()
     }
 
-    pub fn deserialize(bytes: Vec<u8>) -> Result<Self, Box<dyn Error>> {
-        let content = String::from_utf8(bytes)?;
+    pub fn deserialize(bytes: Vec<u8>) -> Self {
+        let content = String::from_utf8(bytes).unwrap();
         // TODO[Rhys] this could use some much cleverer parsing
         let regex = RegexBuilder::new(
             r"(?x)
@@ -61,14 +60,14 @@ impl Commit {
         .unwrap();
         let captures = regex.captures(&*content).unwrap();
 
-        Ok(Self {
+        Self {
             tree: captures.name("tree").unwrap().as_str().into(),
             parent: captures.name("parent").map(|cap| cap.as_str().into()),
             author: captures.name("author").unwrap().as_str().into(),
             committer: captures.name("committer").unwrap().as_str().into(),
             gpgsig: captures.name("gpgsig").map(|cap| cap.as_str().into()),
             message: captures.name("message").unwrap().as_str().into(),
-        })
+        }
     }
 }
 
@@ -111,7 +110,7 @@ mod tests {
             gpgsig: None,
             message: "Initial revision of \"git\", the information manager from hell".to_string(),
         };
-        let commit = Commit::deserialize(Vec::from(serialized)).unwrap();
+        let commit = Commit::deserialize(Vec::from(serialized));
         assert_eq!(commit, deserialized);
         assert_eq!(String::from_utf8(commit.serialize()).unwrap(), serialized)
     }
@@ -171,7 +170,7 @@ mod tests {
             ),
             message: "refactor: clean up init and add todos".to_string(),
         };
-        let commit = Commit::deserialize(Vec::from(serialized)).unwrap();
+        let commit = Commit::deserialize(Vec::from(serialized));
         assert_eq!(commit, deserialized);
         assert_eq!(String::from_utf8(commit.serialize()).unwrap(), serialized)
     }

@@ -1,5 +1,3 @@
-use std::error::Error;
-
 #[derive(Debug, PartialEq)]
 pub struct Tag {
     // TODO[Rhys] figure out how tags are actually structured
@@ -11,10 +9,10 @@ impl Tag {
         self.content.clone().into_bytes()
     }
 
-    pub fn deserialize(bytes: Vec<u8>) -> Result<Self, Box<dyn Error>> {
-        Ok(Self {
-            content: String::from_utf8(bytes)?,
-        })
+    pub fn deserialize(bytes: Vec<u8>) -> Self {
+        Self {
+            content: String::from_utf8(bytes).unwrap(),
+        }
     }
 }
 
@@ -28,7 +26,7 @@ mod tests {
         let deserialized = Tag {
             content: serialized.to_string(),
         };
-        let tag = Tag::deserialize(Vec::from(serialized)).unwrap();
+        let tag = Tag::deserialize(Vec::from(serialized));
         assert_eq!(tag, deserialized);
         assert_eq!(String::from_utf8(tag.serialize()).unwrap(), serialized)
     }
