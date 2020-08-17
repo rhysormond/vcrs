@@ -26,7 +26,6 @@ struct Log {
 
 #[derive(Clap)]
 struct CatFile {
-    kind: String,
     object: String,
 }
 
@@ -49,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     match opts.subcmd {
         SubCommand::Init => init(),
         SubCommand::Log(args) => log(args.hash),
-        SubCommand::CatFile(args) => cat_file(args.kind, args.object),
+        SubCommand::CatFile(args) => cat_file(args.object),
         SubCommand::Checkout(args) => checkout(args.commit),
         SubCommand::HashObject(args) => hash_object(args.kind, args.file, args.write),
     }

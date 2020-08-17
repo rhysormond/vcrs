@@ -1,22 +1,22 @@
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, BufWriter, Error, Read};
 use std::path::{Path, PathBuf};
 
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
+use regex::Regex;
 
 use crate::object::tree::Tree;
 use crate::object::Object;
-use std::fs;
 
 const GIT_DIR: &str = ".git";
 const OBJECT_DIR: &str = "objects";
-const HEADS_DIR: &str = "heads";
+const REFS_DIR: &str = "refs";
 const HEAD_FILE: &str = "HEAD";
 
 #[derive(Debug)]
@@ -24,7 +24,7 @@ pub struct Repository {
     pub work_tree: PathBuf,
     pub root: PathBuf,
     pub objects: PathBuf,
-    pub heads: PathBuf,
+    pub refs: PathBuf,
     pub head: PathBuf,
 }
 
@@ -36,13 +36,13 @@ impl Repository {
     pub fn new(work_tree: PathBuf) -> Self {
         let root = work_tree.join(GIT_DIR);
         let objects = root.join(Path::new(OBJECT_DIR));
-        let heads = root.join(Path::new(HEADS_DIR));
+        let refs = root.join(Path::new(REFS_DIR));
         let head = root.join(Path::new(HEAD_FILE));
         Self {
             work_tree,
             root,
             objects,
-            heads,
+            refs,
             head,
         }
     }
@@ -73,8 +73,27 @@ impl Repository {
         Ok(())
     }
 
-    pub fn find_object(kind: String, hash: String) -> Result<String, Error> {
-        Ok(hash)
+    fn find_ref(&self, name: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let file = &self.refs.join(Path::new(&name));
+        let content = fs::read_to_string(file)?;
+        let regex = Regex::new(r"^ref: (?P<ref>.*)$")?;
+
+        let maybe_match = regex
+            .captures(content.as_str())
+            .map(|c| c.name("ref"))
+            .flatten();
+
+        match maybe_match {
+            Some(n) => self.find_ref(n.as_str()),
+            None => {
+                // TODO[Rhys] find a more consistent way of trimming the trailing newline
+                Ok(content[..content.len() - 1].to_string())
+            }
+        }
+    }
+
+    pub fn find_object(&self, name: String) -> Result<String, Box<dyn std::error::Error>> {
+        Ok(self.find_ref(&name).unwrap_or(name))
     }
 
     pub fn hash(bytes: &[u8]) -> String {
@@ -125,8 +144,9 @@ impl Repository {
 
 #[cfg(test)]
 mod tests {
-    use crate::repository::Repository;
     use std::path::Path;
+
+    use crate::repository::Repository;
 
     #[test]
     fn hashes() {

@@ -4,7 +4,7 @@ use std::error::Error;
 
 pub fn log(hash: String) -> Result<(), Box<dyn Error>> {
     let repo = Repository::for_working_directory()?;
-    let mut maybe_commit = Some(hash);
+    let mut maybe_commit = Some(repo.find_object(hash)?);
     loop {
         maybe_commit = match &maybe_commit {
             Some(commit) => {

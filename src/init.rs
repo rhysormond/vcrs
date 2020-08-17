@@ -10,7 +10,7 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
 
     // TODO[Rhys] we need to create things like config, description, tags, etc.
     fs::create_dir_all(repo.objects)?;
-    fs::create_dir_all(repo.heads)?;
+    fs::create_dir_all(repo.refs)?;
     let mut file = File::create(repo.head)?;
     file.write_all(b"ref: refs/heads/master\n")?;
 
