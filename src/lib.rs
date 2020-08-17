@@ -10,4 +10,5 @@ mod hash_object;
 mod init;
 mod log;
 mod object;
+mod reference;
 mod repository;
