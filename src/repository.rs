@@ -9,10 +9,10 @@ use crypto::sha1::Sha1;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use regex::Regex;
 
 use crate::object::tree::Tree;
 use crate::object::Object;
+use crate::reference::Reference;
 
 const GIT_DIR: &str = ".git";
 const OBJECT_DIR: &str = "objects";
@@ -74,21 +74,11 @@ impl Repository {
     }
 
     fn find_ref(&self, name: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let file = &self.refs.join(Path::new(&name));
+        let file = &self.root.join(Path::new(&name));
         let content = fs::read_to_string(file)?;
-        let regex = Regex::new(r"^ref: (?P<ref>.*)$")?;
-
-        let maybe_match = regex
-            .captures(content.as_str())
-            .map(|c| c.name("ref"))
-            .flatten();
-
-        match maybe_match {
-            Some(n) => self.find_ref(n.as_str()),
-            None => {
-                // TODO[Rhys] find a more consistent way of trimming the trailing newline
-                Ok(content[..content.len() - 1].to_string())
-            }
+        match Reference::deserialize(content.as_str())? {
+            Reference::Ref(reference) => self.find_ref(&reference),
+            Reference::Commit(hash) => Ok(hash),
         }
     }
 

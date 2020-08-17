@@ -19,6 +19,7 @@ pub fn checkout(commit: String) -> Result<(), Box<dyn std::error::Error>> {
     };
 
     repo.checkout_tree(tree, &repo.work_tree)?;
+    // TODO[Rhys] this should set the head to a ref when appropriate
     repo.set_head(hash.as_str())?;
 
     Ok(())
