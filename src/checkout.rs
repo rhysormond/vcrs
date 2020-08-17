@@ -6,7 +6,9 @@ pub fn checkout(commit: String) -> Result<(), Box<dyn std::error::Error>> {
     // TODO[Rhys] add more relaxed safeguards here
     assert!(repo.is_empty()?);
 
-    let tree_hash = match repo.read_object(commit.as_str())? {
+    let hash = repo.find_object(commit)?;
+
+    let tree_hash = match repo.read_object(hash.as_str())? {
         Object::Commit(data) => data.tree,
         _ => panic!("Object was not a commit."),
     };
