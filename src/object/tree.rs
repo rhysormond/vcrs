@@ -4,6 +4,7 @@ use std::num::ParseIntError;
 use nom::{
     bytes::complete::{take, take_while, take_while_m_n},
     combinator::map_res,
+    sequence::tuple,
     IResult,
 };
 
@@ -23,7 +24,7 @@ impl Tree {
         let mut remainder: &[u8] = bytes.as_slice();
         let mut leaves: Vec<Leaf> = vec![];
         while !remainder.is_empty() {
-            let (leaf, rest) = Leaf::deserialize(remainder)?;
+            let (rest, leaf) = Leaf::deserialize(remainder).unwrap();
             leaves.push(leaf);
             remainder = rest
         }
@@ -58,34 +59,39 @@ impl Leaf {
         .concat()
     }
 
-    fn deserialize_mode(input: &[u8]) -> IResult<&[u8], String> {
+    fn parse_mode(input: &[u8]) -> IResult<&[u8], String> {
         // NOTE[Rhys] modes don't have to be 6 characters as leading 0s are dropped
         map_res(take_while_m_n(0, 6, |c| c != ASCII_SPACE), |c: &[u8]| {
             String::from_utf8(c.to_vec())
         })(input)
+        .map(
+            // Note[Rhys] we slice remainder here to drop the space delimiter
+            |(remainder, path)| (&remainder[1..], path),
+        )
     }
 
-    fn deserialize_path(input: &[u8]) -> IResult<&[u8], String> {
+    fn parse_path(input: &[u8]) -> IResult<&[u8], String> {
         map_res(take_while(|c| c != ASCII_NULL), |c: &[u8]| {
             String::from_utf8(c.to_vec())
         })(input)
+        .map(
+            // Note[Rhys] we slice remainder here to drop the null delimiter
+            |(remainder, path)| (&remainder[1..], path),
+        )
     }
 
-    fn deserialize_hash(input: &[u8]) -> IResult<&[u8], String> {
+    fn parse_hash(input: &[u8]) -> IResult<&[u8], String> {
         // Note[Rhys] this ParseIntError is a lie but nom expects there to be some error type here
         map_res(take(20 as usize), |h: &[u8]| {
             Ok::<String, ParseIntError>(Leaf::decode_hash(h))
         })(input)
     }
 
-    pub fn deserialize(bytes: &[u8]) -> Result<(Self, &[u8]), Box<dyn Error>> {
-        let remainder = bytes;
-        let (remainder, mode) = Leaf::deserialize_mode(remainder).unwrap();
-        // Note[Rhys] we slice remainder here to drop the space delimiter
-        let (remainder, path) = Leaf::deserialize_path(&remainder[1..]).unwrap();
-        // Note[Rhys] we slice remainder here to drop the null delimiter
-        let (remainder, hash) = Leaf::deserialize_hash(&remainder[1..]).unwrap();
-        Ok((Self { mode, path, hash }, remainder))
+    pub fn deserialize(bytes: &[u8]) -> IResult<&[u8], Self> {
+        let (remainder, (mode, path, hash)) =
+            tuple((Leaf::parse_mode, Leaf::parse_path, Leaf::parse_hash))(bytes)?;
+
+        Ok((remainder, Self { mode, path, hash }))
     }
 }
 
@@ -116,38 +122,72 @@ mod tests {
 
     #[test]
     fn deserializes_mode() {
-        let raw = [49, 48, 48, 54, 52, 52, ASCII_SPACE];
-        let (remainder, mode) = Leaf::deserialize_mode(&raw).unwrap();
+        let expected_remainder = 48;
+        let raw = [49, 48, 48, 54, 52, 52, ASCII_SPACE, expected_remainder];
+        let (remainder, mode) = Leaf::parse_mode(&raw).unwrap();
         assert_eq!(mode, "100644");
-        assert_eq!(remainder, [ASCII_SPACE]);
+        assert_eq!(remainder, [expected_remainder]);
     }
 
     #[test]
     fn deserializes_mode_with_implicit_leading_zero() {
-        let raw = [52, 48, 48, 48, 48, ASCII_SPACE];
-        let (remainder, mode) = Leaf::deserialize_mode(&raw).unwrap();
+        let expected_remainder = 48;
+        let raw = [52, 48, 48, 48, 48, ASCII_SPACE, expected_remainder];
+        let (remainder, mode) = Leaf::parse_mode(&raw).unwrap();
         assert_eq!(mode, "40000");
-        assert_eq!(remainder, [ASCII_SPACE]);
+        assert_eq!(remainder, [expected_remainder]);
     }
 
     #[test]
     fn deserializes_path() {
-        let raw = [82, 69, 65, 68, 77, 69, 46, 109, 100, ASCII_NULL];
-        let (remainder, mode) = Leaf::deserialize_path(&raw).unwrap();
+        let expected_remainder = 48;
+        let raw = [
+            82,
+            69,
+            65,
+            68,
+            77,
+            69,
+            46,
+            109,
+            100,
+            ASCII_NULL,
+            expected_remainder,
+        ];
+        let (remainder, mode) = Leaf::parse_path(&raw).unwrap();
         assert_eq!(mode, "README.md");
-        assert_eq!(remainder, [ASCII_NULL]);
+        assert_eq!(remainder, [expected_remainder]);
     }
 
     #[test]
     fn deserializes_hash() {
-        let test_char: u8 = 100;
+        let expected_remainder: u8 = 100;
         let raw: Vec<u8> = vec![
-            0, 219, 250, 237, 236, 71, 165, 169, 35, 228, 150, 70, 108, 63, 223, 76, 200, 117, 247,
-            74, test_char,
+            0,
+            219,
+            250,
+            237,
+            236,
+            71,
+            165,
+            169,
+            35,
+            228,
+            150,
+            70,
+            108,
+            63,
+            223,
+            76,
+            200,
+            117,
+            247,
+            74,
+            expected_remainder,
         ];
-        let (remainder, mode) = Leaf::deserialize_hash(&raw).unwrap();
+        let (remainder, mode) = Leaf::parse_hash(&raw).unwrap();
         assert_eq!(mode, "00dbfaedec47a5a923e496466c3fdf4cc875f74a");
-        assert_eq!(remainder, [test_char]);
+        assert_eq!(remainder, [expected_remainder]);
     }
 
     #[test]
@@ -172,7 +212,7 @@ mod tests {
             path: ".gitignore".to_string(),
             hash: "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba".to_string(),
         };
-        let (leaf, remainder) = Leaf::deserialize(&serialized).unwrap();
+        let (remainder, leaf) = Leaf::deserialize(&serialized).unwrap();
         assert!(remainder.is_empty());
         assert_eq!(leaf, deserialized);
         assert_eq!(leaf.serialize(), serialized)

@@ -78,10 +78,7 @@ mod tests {
 
     #[test]
     fn serialize_fields() {
-        assert_eq!(
-            Commit::serialize_field(&"field", "value"),
-            "field value\n"
-        );
+        assert_eq!(Commit::serialize_field(&"field", "value"), "field value\n");
     }
 
     #[test]
@@ -94,10 +91,7 @@ mod tests {
 
     #[test]
     fn not_serialize_optional_field_when_not_defined() {
-        assert_eq!(
-            Commit::serialize_optional_field(&"field", &None),
-            ""
-        );
+        assert_eq!(Commit::serialize_optional_field(&"field", &None), "");
     }
 
     #[test]
@@ -172,7 +166,8 @@ mod tests {
                  IOTSJoM985ubIYxonwcFDUfJ3jZGZxqulu3fSbeYa31ZRVwsCbM=\n\
                  =By2v\n\
                  -----END PGP SIGNATURE-----\
-                ".to_string(),
+                "
+                .to_string(),
             ),
             message: "refactor: clean up init and add todos".to_string(),
         };
