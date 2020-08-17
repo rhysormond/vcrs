@@ -1,10 +1,12 @@
 use crate::object::Object;
+use crate::reference::Reference;
 use crate::repository::Repository;
 use std::error::Error;
 
-pub fn log(hash: String) -> Result<(), Box<dyn Error>> {
+pub fn log(object: String) -> Result<(), Box<dyn Error>> {
+    let reference = Reference::from_name(object.as_str())?;
     let repo = Repository::for_working_directory()?;
-    let mut maybe_commit = Some(repo.find_object(hash)?);
+    let mut maybe_commit = Some(repo.find_commit(&reference)?);
     loop {
         maybe_commit = match &maybe_commit {
             Some(commit) => {

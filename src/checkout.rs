@@ -1,12 +1,14 @@
 use crate::object::Object;
+use crate::reference::Reference;
 use crate::repository::Repository;
 
-pub fn checkout(commit: String) -> Result<(), Box<dyn std::error::Error>> {
+pub fn checkout(object: String) -> Result<(), Box<dyn std::error::Error>> {
+    let reference = Reference::from_name(object.as_str())?;
     let repo = Repository::for_working_directory()?;
     // TODO[Rhys] add more relaxed safeguards here
     assert!(repo.is_empty()?);
 
-    let hash = repo.find_object(commit)?;
+    let hash = repo.find_commit(&reference)?;
 
     let tree_hash = match repo.read_object(hash.as_str())? {
         Object::Commit(data) => data.tree,
@@ -19,8 +21,7 @@ pub fn checkout(commit: String) -> Result<(), Box<dyn std::error::Error>> {
     };
 
     repo.checkout_tree(tree, &repo.work_tree)?;
-    // TODO[Rhys] this should set the head to a ref when appropriate
-    repo.set_head(hash.as_str())?;
+    repo.set_head(&reference)?;
 
     Ok(())
 }

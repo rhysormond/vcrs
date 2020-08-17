@@ -73,23 +73,25 @@ impl Repository {
         Ok(())
     }
 
-    fn find_ref(&self, name: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let file = &self.root.join(Path::new(&name));
-        let content = fs::read_to_string(file)?;
-        match Reference::deserialize(content.as_str())? {
-            Reference::Ref(reference) => self.find_ref(&reference),
-            Reference::Commit(hash) => Ok(hash),
+    // TODO[Rhys] consider typing this more strongly to return a Commit
+    pub fn find_commit(&self, reference: &Reference) -> Result<String, Box<dyn std::error::Error>> {
+        match reference {
+            Reference::Head => {
+                let content = fs::read_to_string(&self.head)?;
+                self.find_commit(&Reference::from_file(content.as_str())?)
+            }
+            Reference::Ref(path) => {
+                let file = &self.root.join(Path::new(&path));
+                let content = fs::read_to_string(file)?;
+                self.find_commit(&Reference::from_file(content.as_str())?)
+            }
+            Reference::Commit(hash) => Ok(hash.to_string()),
         }
     }
 
-    pub fn find_object(&self, name: String) -> Result<String, Box<dyn std::error::Error>> {
-        Ok(self.find_ref(&name).unwrap_or(name))
-    }
-
-    // TODO[Rhys] this really begs for a first-classed concept of refs
-    pub fn set_head(&self, head: &str) -> Result<(), Error> {
+    pub fn set_head(&self, head: &Reference) -> Result<(), Error> {
         let mut file = File::create(&self.head)?;
-        file.write_all(head.as_bytes())
+        file.write_all(head.serialize().as_bytes())
     }
 
     pub fn hash(bytes: &[u8]) -> String {
