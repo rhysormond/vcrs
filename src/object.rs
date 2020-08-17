@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn serializes() {
         let blob = Blob(blob::Blob {
-            content: String::from("some blob"),
+            content: "some blob".to_string(),
         });
         let serialized = String::from_utf8(blob.serialize()).unwrap();
         let expected = "blob 9\u{0}some blob";
@@ -113,7 +113,7 @@ mod tests {
     fn deserializes() {
         let serialized = "blob 9\u{0}some blob";
         let expected = Blob(blob::Blob {
-            content: String::from("some blob"),
+            content: "some blob".to_string(),
         });
         let blob = Object::deserialize(serialized.as_bytes()).unwrap();
         assert_eq!(blob, expected)

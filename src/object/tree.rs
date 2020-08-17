@@ -39,7 +39,7 @@ struct Leaf {
 }
 
 impl Leaf {
-    fn encode_hash(hash: &String) -> Vec<u8> {
+    fn encode_hash(hash: &str) -> Vec<u8> {
         hex::decode(hash).expect("Unable to encode hash.")
     }
 
@@ -96,18 +96,18 @@ mod tests {
 
     #[test]
     fn decodes_hash() {
-        let raw: Vec<u8> = vec![
+        let raw = vec![
             0, 219, 250, 237, 236, 71, 165, 169, 35, 228, 150, 70, 108, 63, 223, 76, 200, 117, 247,
             74,
         ];
-        let parsed: String = String::from("00dbfaedec47a5a923e496466c3fdf4cc875f74a");
+        let parsed = "00dbfaedec47a5a923e496466c3fdf4cc875f74a";
         assert_eq!(Leaf::decode_hash(&raw), parsed)
     }
 
     #[test]
     fn encodes_hash() {
-        let raw: String = String::from("00dbfaedec47a5a923e496466c3fdf4cc875f74a");
-        let parsed: Vec<u8> = vec![
+        let raw = "00dbfaedec47a5a923e496466c3fdf4cc875f74a";
+        let parsed = vec![
             0, 219, 250, 237, 236, 71, 165, 169, 35, 228, 150, 70, 108, 63, 223, 76, 200, 117, 247,
             74,
         ];
@@ -158,15 +158,19 @@ mod tests {
             234, 140, 75, 247, 243, 95, 111, 119, 247, 93, 146, 173, 140, 232, 52, 159, 110, 129,
             221, 186,
         ];
-        let serialized: Vec<u8> = vec![mode, vec![ASCII_SPACE], path, vec![ASCII_NULL], hash]
-            .iter()
-            .flatten()
-            .cloned()
-            .collect();
+        let serialized: &[u8] = &[
+            mode.as_slice(),
+            &[ASCII_SPACE],
+            path.as_slice(),
+            &[ASCII_NULL],
+            hash.as_slice(),
+        ]
+        .concat();
+
         let deserialized = Leaf {
-            mode: String::from("100644"),
-            path: String::from(".gitignore"),
-            hash: String::from("ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba"),
+            mode: "100644".to_string(),
+            path: ".gitignore".to_string(),
+            hash: "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba".to_string(),
         };
         let (leaf, remainder) = Leaf::deserialize(&serialized).unwrap();
         assert!(remainder.is_empty());

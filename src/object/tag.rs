@@ -25,7 +25,7 @@ mod tests {
     fn can_roundtrip_tags() {
         let serialized = "tag";
         let deserialized = Tag {
-            content: String::from(serialized),
+            content: serialized.to_string(),
         };
         let tag = Tag::deserialize(Vec::from(serialized)).unwrap();
         assert_eq!(tag, deserialized);

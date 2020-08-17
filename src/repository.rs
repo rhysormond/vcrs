@@ -50,7 +50,7 @@ impl Repository {
         Ok(hash)
     }
 
-    pub fn hash(bytes: &Vec<u8>) -> String {
+    pub fn hash(bytes: &[u8]) -> String {
         let mut hasher = Sha1::new();
         hasher.input(bytes);
         hasher.result_str()
@@ -103,9 +103,9 @@ mod tests {
 
     #[test]
     fn hashes() {
-        let data = String::from("test");
+        let data = "test";
         let expected = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3";
-        let hash = Repository::hash(&data.into());
+        let hash = Repository::hash(data.as_bytes());
         assert_eq!(hash, expected)
     }
 

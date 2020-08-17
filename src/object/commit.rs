@@ -13,7 +13,7 @@ pub struct Commit {
 }
 
 impl Commit {
-    fn serialize_field(field_name: &str, obj: &String) -> String {
+    fn serialize_field(field_name: &str, obj: &str) -> String {
         format!("{} {}\n", field_name, obj)
     }
 
@@ -31,7 +31,7 @@ impl Commit {
             Self::serialize_field("author", &self.author),
             Self::serialize_field("committer", &self.committer),
             Self::serialize_optional_field("gpgsig", &self.gpgsig),
-            String::from("\n"),
+            "\n".to_string(),
             self.message.clone(),
         ];
         fields
@@ -79,16 +79,16 @@ mod tests {
     #[test]
     fn serialize_fields() {
         assert_eq!(
-            Commit::serialize_field(&"field", &String::from("value")),
-            String::from("field value\n")
+            Commit::serialize_field(&"field", "value"),
+            "field value\n"
         );
     }
 
     #[test]
     fn serialize_optional_field_when_defined() {
         assert_eq!(
-            Commit::serialize_optional_field(&"field", &Some(String::from("value"))),
-            String::from("field value\n")
+            Commit::serialize_optional_field(&"field", &Some("value".to_string())),
+            "field value\n"
         );
     }
 
@@ -96,7 +96,7 @@ mod tests {
     fn not_serialize_optional_field_when_not_defined() {
         assert_eq!(
             Commit::serialize_optional_field(&"field", &None),
-            String::from("")
+            ""
         );
     }
 
@@ -110,12 +110,12 @@ mod tests {
             Initial revision of \"git\", the information manager from hell\
             ";
         let deserialized = Commit {
-            tree: String::from("2b5bfdf7798569e0b59b16eb9602d5fa572d6038"),
+            tree: "2b5bfdf7798569e0b59b16eb9602d5fa572d6038".to_string(),
             parent: None,
-            author: String::from("Linus Torvalds <torvalds@ppc970.osdl.org> 1112911993 -0700"),
-            committer: String::from("Linus Torvalds <torvalds@ppc970.osdl.org> 1112911993 -0700"),
+            author: "Linus Torvalds <torvalds@ppc970.osdl.org> 1112911993 -0700".to_string(),
+            committer: "Linus Torvalds <torvalds@ppc970.osdl.org> 1112911993 -0700".to_string(),
             gpgsig: None,
-            message: String::from("Initial revision of \"git\", the information manager from hell"),
+            message: "Initial revision of \"git\", the information manager from hell".to_string(),
         };
         let commit = Commit::deserialize(Vec::from(serialized)).unwrap();
         assert_eq!(commit, deserialized);
@@ -150,11 +150,11 @@ mod tests {
         ";
 
         let deserialized = Commit {
-            tree: String::from("c171921c5c0f2e02f7243c13d331e96f149fd653"),
-            parent: Some(String::from("4478b9c55808657544198529c58e29888d31e677")),
-            author: String::from("rhysormond <email> 1597275816 -0700"),
-            committer: String::from("rhysormond <email> 1597275816 -0700"),
-            gpgsig: Some(String::from(
+            tree: "c171921c5c0f2e02f7243c13d331e96f149fd653".to_string(),
+            parent: Some("4478b9c55808657544198529c58e29888d31e677".to_string()),
+            author: "rhysormond <email> 1597275816 -0700".to_string(),
+            committer: "rhysormond <email> 1597275816 -0700".to_string(),
+            gpgsig: Some(
                 "\
                 -----BEGIN PGP SIGNATURE-----\n\
                 \n\
@@ -172,9 +172,9 @@ mod tests {
                  IOTSJoM985ubIYxonwcFDUfJ3jZGZxqulu3fSbeYa31ZRVwsCbM=\n\
                  =By2v\n\
                  -----END PGP SIGNATURE-----\
-                ",
-            )),
-            message: String::from("refactor: clean up init and add todos"),
+                ".to_string(),
+            ),
+            message: "refactor: clean up init and add todos".to_string(),
         };
         let commit = Commit::deserialize(Vec::from(serialized)).unwrap();
         assert_eq!(commit, deserialized);
