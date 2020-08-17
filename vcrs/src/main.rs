@@ -2,7 +2,7 @@ use std::error::Error;
 
 use clap::Clap;
 
-use gitrs::{cat_file, hash_object, init, log};
+use gitrs::{cat_file, checkout, hash_object, init, log};
 
 #[derive(Clap)]
 struct Opts {
@@ -15,6 +15,7 @@ enum SubCommand {
     Init,
     Log(Log),
     CatFile(CatFile),
+    Checkout(Checkout),
     HashObject(HashObject),
 }
 
@@ -27,6 +28,11 @@ struct Log {
 struct CatFile {
     kind: String,
     object: String,
+}
+
+#[derive(Clap)]
+struct Checkout {
+    commit: String,
 }
 
 #[derive(Clap)]
@@ -44,6 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         SubCommand::Init => init(),
         SubCommand::Log(args) => log(args.hash),
         SubCommand::CatFile(args) => cat_file(args.kind, args.object),
+        SubCommand::Checkout(args) => checkout(args.commit),
         SubCommand::HashObject(args) => hash_object(args.kind, args.file, args.write),
     }
 }

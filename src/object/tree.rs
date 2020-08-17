@@ -12,7 +12,7 @@ use crate::object::constant::*;
 
 #[derive(Debug, PartialEq)]
 pub struct Tree {
-    leaves: Vec<Leaf>,
+    pub leaves: Vec<Leaf>,
 }
 
 impl Tree {
@@ -33,10 +33,10 @@ impl Tree {
 }
 
 #[derive(Debug, PartialEq)]
-struct Leaf {
+pub struct Leaf {
     mode: String,
-    path: String,
-    hash: String,
+    pub path: String,
+    pub hash: String,
 }
 
 impl Leaf {

@@ -10,6 +10,7 @@ use flate2::Compression;
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
 
+use crate::object::tree::Tree;
 use crate::object::Object;
 use std::fs;
 
@@ -44,6 +45,32 @@ impl Repository {
             heads,
             head,
         }
+    }
+
+    pub fn is_empty(&self) -> Result<bool, Error> {
+        let mut files = self.work_tree.read_dir()?;
+        Ok(files.all(|f| f.unwrap().file_name() == GIT_DIR))
+    }
+
+    pub fn checkout_tree(&self, tree: Tree, path: &PathBuf) -> Result<(), Error> {
+        // TODO[Rhys] this is pretty sloppy
+        tree.leaves.iter().for_each(|l| {
+            let child_path = path.join(PathBuf::from(&l.path));
+            match self.read_object(l.hash.as_str()).unwrap() {
+                Object::Tree(data) => {
+                    // TODO[Rhys] don't check out the tree if the hashes are the same
+                    self.checkout_tree(data, &child_path).unwrap();
+                }
+                Object::Blob(data) => {
+                    fs::create_dir_all(child_path.parent().unwrap()).unwrap();
+                    let mut file = File::create(child_path).unwrap();
+                    file.write_all(data.content.as_bytes()).unwrap();
+                }
+                _ => panic!("Object was not a tree or a blob."),
+            }
+        });
+
+        Ok(())
     }
 
     pub fn find_object(kind: String, hash: String) -> Result<String, Error> {

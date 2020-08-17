@@ -71,7 +71,8 @@ impl Object {
 
     pub fn deserialize(bytes: &[u8]) -> Result<Self, Box<dyn Error>> {
         // TODO[Rhys] this shouldn't unwrap but lifetimes for bytes gets weird
-        let (remainder, (kind, size)) = tuple((Object::parse_kind, Object::parse_size))(bytes).unwrap();
+        let (remainder, (kind, size)) =
+            tuple((Object::parse_kind, Object::parse_size))(bytes).unwrap();
 
         assert_eq!(
             size,

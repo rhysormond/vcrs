@@ -1,18 +1,12 @@
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
-use std::{fs, io};
 
 use crate::repository::Repository;
 
 pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     let repo = Repository::for_working_directory()?;
-
-    if !repo.work_tree.read_dir()?.next().is_none() {
-        return Err(Box::new(io::Error::new(
-            io::ErrorKind::AlreadyExists,
-            format!("{:?} is not empty", repo.work_tree),
-        )));
-    }
+    assert!(repo.is_empty()?);
 
     // TODO[Rhys] we need to create things like config, description, tags, etc.
     fs::create_dir_all(repo.objects)?;
