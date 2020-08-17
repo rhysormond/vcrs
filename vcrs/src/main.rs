@@ -21,7 +21,7 @@ enum SubCommand {
 
 #[derive(Clap)]
 struct Log {
-    hash: String,
+    hash: Option<String>,
 }
 
 #[derive(Clap)]

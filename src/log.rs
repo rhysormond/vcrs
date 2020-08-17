@@ -3,8 +3,9 @@ use crate::reference::Reference;
 use crate::repository::Repository;
 use std::error::Error;
 
-pub fn log(object: String) -> Result<(), Box<dyn Error>> {
-    let reference = Reference::from_name(object.as_str())?;
+pub fn log(object: Option<String>) -> Result<(), Box<dyn Error>> {
+    let head = object.unwrap_or("HEAD".to_string());
+    let reference = Reference::from_name(head.as_str())?;
     let repo = Repository::for_working_directory()?;
     let mut maybe_commit = Some(repo.find_commit(&reference)?);
     loop {
