@@ -2,6 +2,7 @@ use std::error::Error;
 
 #[derive(Debug, PartialEq)]
 pub struct Tag {
+    // TODO[Rhys] figure out how tags are actually structured
     content: String,
 }
 

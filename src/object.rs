@@ -89,7 +89,7 @@ mod tests {
     use crate::object::{blob, Object, Object::Blob};
 
     #[test]
-    fn deserializes_kind() {
+    fn parses_kind() {
         let expected_remainder = 48;
         let raw = [116, 114, 101, 101, ASCII_SPACE, expected_remainder];
         let (remainder, kind) = Object::parse_kind(&raw).unwrap();
@@ -98,7 +98,7 @@ mod tests {
     }
 
     #[test]
-    fn deserializes_size() {
+    fn parses_size() {
         let expected_remainder = 48;
         let raw = [49, 50, 51, ASCII_NULL, expected_remainder];
         let (remainder, size) = Object::parse_size(&raw).unwrap();

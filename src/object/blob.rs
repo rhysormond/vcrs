@@ -22,7 +22,7 @@ mod tests {
     use crate::object::blob::Blob;
 
     #[test]
-    fn can_roundtrip_tags() {
+    fn round_trips_tags() {
         let serialized = "blob";
         let deserialized = Blob {
             content: serialized.to_string(),

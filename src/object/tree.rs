@@ -121,7 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn deserializes_mode() {
+    fn parses_mode() {
         let expected_remainder = 48;
         let raw = [49, 48, 48, 54, 52, 52, ASCII_SPACE, expected_remainder];
         let (remainder, mode) = Leaf::parse_mode(&raw).unwrap();
@@ -130,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn deserializes_mode_with_implicit_leading_zero() {
+    fn parses_mode_with_implicit_leading_zero() {
         let expected_remainder = 48;
         let raw = [52, 48, 48, 48, 48, ASCII_SPACE, expected_remainder];
         let (remainder, mode) = Leaf::parse_mode(&raw).unwrap();
@@ -139,7 +139,7 @@ mod tests {
     }
 
     #[test]
-    fn deserializes_path() {
+    fn parses_path() {
         let expected_remainder = 48;
         let raw = [
             82,
@@ -160,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn deserializes_hash() {
+    fn parses_hash() {
         let expected_remainder: u8 = 100;
         let raw: Vec<u8> = vec![
             0,

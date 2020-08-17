@@ -77,12 +77,12 @@ mod tests {
     use crate::object::commit::Commit;
 
     #[test]
-    fn serialize_fields() {
+    fn serializes_fields() {
         assert_eq!(Commit::serialize_field(&"field", "value"), "field value\n");
     }
 
     #[test]
-    fn serialize_optional_field_when_defined() {
+    fn serializes_optional_field_when_defined() {
         assert_eq!(
             Commit::serialize_optional_field(&"field", &Some("value".to_string())),
             "field value\n"
@@ -90,12 +90,12 @@ mod tests {
     }
 
     #[test]
-    fn not_serialize_optional_field_when_not_defined() {
+    fn doesnt_serialize_optional_field_when_not_defined() {
         assert_eq!(Commit::serialize_optional_field(&"field", &None), "");
     }
 
     #[test]
-    fn can_roundtrip_basic_commits() {
+    fn round_trips_basic_commits() {
         let serialized = "\
             tree 2b5bfdf7798569e0b59b16eb9602d5fa572d6038\n\
             author Linus Torvalds <torvalds@ppc970.osdl.org> 1112911993 -0700\n\
@@ -117,7 +117,7 @@ mod tests {
     }
 
     #[test]
-    fn can_roundtrip_commits_with_all_fields() {
+    fn round_trips_commits_with_all_fields() {
         let serialized = "\
             tree c171921c5c0f2e02f7243c13d331e96f149fd653\n\
             parent 4478b9c55808657544198529c58e29888d31e677\n\
