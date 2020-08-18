@@ -1,4 +1,7 @@
-use nom::{bytes::complete::take_while, combinator::map_res, sequence::tuple, IResult};
+use nom::{
+    bytes::complete::take_while, character::complete::char, combinator::map_res, sequence::tuple,
+    IResult,
+};
 
 use constant::*;
 
@@ -46,32 +49,26 @@ impl Object {
         .concat()
     }
 
-    // TODO[Rhys] deduplicate this with the tree parsing logic
     fn parse_kind(input: &[u8]) -> IResult<&[u8], String> {
         map_res(take_while(|c| c != ASCII_SPACE), |c: &[u8]| {
             String::from_utf8(c.to_vec())
         })(input)
-        .map(
-            // Note[Rhys] we slice remainder here to drop the space delimiter
-            |(remainder, path)| (&remainder[1..], path),
-        )
     }
 
     fn parse_size(input: &[u8]) -> IResult<&[u8], usize> {
-        // TODO[Rhys] this &[u8] -> usize conversion is pretty sloppy
         map_res(take_while(|c| c != ASCII_NULL), |c: &[u8]| {
             String::from_utf8(c.to_vec()).unwrap().parse()
         })(input)
-        .map(
-            // Note[Rhys] we slice remainder here to drop the null delimiter
-            |(remainder, path)| (&remainder[1..], path),
-        )
     }
 
     pub fn deserialize(bytes: &[u8]) -> Self {
-        // TODO[Rhys] this shouldn't unwrap but lifetimes for bytes gets weird
-        let (remainder, (kind, size)) =
-            tuple((Object::parse_kind, Object::parse_size))(bytes).unwrap();
+        let (remainder, (kind, _, size, _)) = tuple((
+            Object::parse_kind,
+            char(ASCII_SPACE_CHAR),
+            Object::parse_size,
+            char(ASCII_NULL_CHAR),
+        ))(bytes)
+        .unwrap();
 
         assert_eq!(
             size,
@@ -90,20 +87,18 @@ mod tests {
 
     #[test]
     fn parses_kind() {
-        let expected_remainder = 48;
-        let raw = [116, 114, 101, 101, ASCII_SPACE, expected_remainder];
+        let raw = [116, 114, 101, 101, ASCII_SPACE];
         let (remainder, kind) = Object::parse_kind(&raw).unwrap();
         assert_eq!(kind, "tree");
-        assert_eq!(remainder, [expected_remainder]);
+        assert_eq!(remainder, [ASCII_SPACE]);
     }
 
     #[test]
     fn parses_size() {
-        let expected_remainder = 48;
-        let raw = [49, 50, 51, ASCII_NULL, expected_remainder];
+        let raw = [49, 50, 51, ASCII_NULL];
         let (remainder, size) = Object::parse_size(&raw).unwrap();
         assert_eq!(size, 123);
-        assert_eq!(remainder, [expected_remainder]);
+        assert_eq!(remainder, [ASCII_NULL]);
     }
 
     #[test]

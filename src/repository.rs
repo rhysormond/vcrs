@@ -90,7 +90,10 @@ impl Repository {
     pub fn set_head(&self, head: &Reference) {
         // Note[Rhys] serializing the content early means we can fail before blanking the HEAD file
         let content = head.serialize();
-        File::create(&self.head).unwrap().write_all(content.as_bytes()).unwrap();
+        File::create(&self.head)
+            .unwrap()
+            .write_all(content.as_bytes())
+            .unwrap();
     }
 
     pub fn hash(bytes: &[u8]) -> String {

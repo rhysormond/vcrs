@@ -2,6 +2,7 @@ use std::num::ParseIntError;
 
 use nom::{
     bytes::complete::{take, take_while, take_while_m_n},
+    character::complete::char,
     combinator::map_res,
     sequence::tuple,
     IResult,
@@ -63,20 +64,12 @@ impl Leaf {
         map_res(take_while_m_n(0, 6, |c| c != ASCII_SPACE), |c: &[u8]| {
             String::from_utf8(c.to_vec())
         })(input)
-        .map(
-            // Note[Rhys] we slice remainder here to drop the space delimiter
-            |(remainder, path)| (&remainder[1..], path),
-        )
     }
 
     fn parse_path(input: &[u8]) -> IResult<&[u8], String> {
         map_res(take_while(|c| c != ASCII_NULL), |c: &[u8]| {
             String::from_utf8(c.to_vec())
         })(input)
-        .map(
-            // Note[Rhys] we slice remainder here to drop the null delimiter
-            |(remainder, path)| (&remainder[1..], path),
-        )
     }
 
     fn parse_hash(input: &[u8]) -> IResult<&[u8], String> {
@@ -87,8 +80,13 @@ impl Leaf {
     }
 
     pub fn deserialize(bytes: &[u8]) -> IResult<&[u8], Self> {
-        let (remainder, (mode, path, hash)) =
-            tuple((Leaf::parse_mode, Leaf::parse_path, Leaf::parse_hash))(bytes)?;
+        let (remainder, (mode, _, path, _, hash)) = tuple((
+            Leaf::parse_mode,
+            char(ASCII_SPACE_CHAR),
+            Leaf::parse_path,
+            char(ASCII_NULL_CHAR),
+            Leaf::parse_hash,
+        ))(bytes)?;
 
         Ok((remainder, Self { mode, path, hash }))
     }
@@ -121,41 +119,26 @@ mod tests {
 
     #[test]
     fn parses_mode() {
-        let expected_remainder = 48;
-        let raw = [49, 48, 48, 54, 52, 52, ASCII_SPACE, expected_remainder];
+        let raw = [49, 48, 48, 54, 52, 52, ASCII_SPACE];
         let (remainder, mode) = Leaf::parse_mode(&raw).unwrap();
         assert_eq!(mode, "100644");
-        assert_eq!(remainder, [expected_remainder]);
+        assert_eq!(remainder, [ASCII_SPACE]);
     }
 
     #[test]
     fn parses_mode_with_implicit_leading_zero() {
-        let expected_remainder = 48;
-        let raw = [52, 48, 48, 48, 48, ASCII_SPACE, expected_remainder];
+        let raw = [52, 48, 48, 48, 48, ASCII_SPACE];
         let (remainder, mode) = Leaf::parse_mode(&raw).unwrap();
         assert_eq!(mode, "40000");
-        assert_eq!(remainder, [expected_remainder]);
+        assert_eq!(remainder, [ASCII_SPACE]);
     }
 
     #[test]
     fn parses_path() {
-        let expected_remainder = 48;
-        let raw = [
-            82,
-            69,
-            65,
-            68,
-            77,
-            69,
-            46,
-            109,
-            100,
-            ASCII_NULL,
-            expected_remainder,
-        ];
+        let raw = [82, 69, 65, 68, 77, 69, 46, 109, 100, ASCII_NULL];
         let (remainder, mode) = Leaf::parse_path(&raw).unwrap();
         assert_eq!(mode, "README.md");
-        assert_eq!(remainder, [expected_remainder]);
+        assert_eq!(remainder, [ASCII_NULL]);
     }
 
     #[test]

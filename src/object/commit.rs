@@ -33,10 +33,7 @@ impl Commit {
             "\n".to_string(),
             self.message.clone(),
         ];
-        fields
-            .iter()
-            .flat_map(|f| f.clone().into_bytes().into_iter())
-            .collect()
+        fields.iter().flat_map(|f| f.as_bytes()).cloned().collect()
     }
 
     pub fn deserialize(bytes: Vec<u8>) -> Self {
