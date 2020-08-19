@@ -24,7 +24,7 @@ impl Tree {
         let mut remainder: &[u8] = bytes.as_slice();
         let mut leaves: Vec<Leaf> = vec![];
         while !remainder.is_empty() {
-            let (rest, leaf) = Leaf::deserialize(remainder).unwrap();
+            let (rest, leaf) = Leaf::deserialize(remainder);
             leaves.push(leaf);
             remainder = rest
         }
@@ -79,16 +79,17 @@ impl Leaf {
         })(input)
     }
 
-    pub fn deserialize(bytes: &[u8]) -> IResult<&[u8], Self> {
+    fn deserialize(bytes: &[u8]) -> (&[u8], Self) {
         let (remainder, (mode, _, path, _, hash)) = tuple((
             Leaf::parse_mode,
             char(ASCII_SPACE_CHAR),
             Leaf::parse_path,
             char(ASCII_NULL_CHAR),
             Leaf::parse_hash,
-        ))(bytes)?;
+        ))(bytes)
+        .unwrap();
 
-        Ok((remainder, Self { mode, path, hash }))
+        (remainder, Self { mode, path, hash })
     }
 }
 
@@ -194,7 +195,7 @@ mod tests {
             path: ".gitignore".to_string(),
             hash: "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba".to_string(),
         };
-        let (remainder, leaf) = Leaf::deserialize(&serialized).unwrap();
+        let (remainder, leaf) = Leaf::deserialize(&serialized);
         assert!(remainder.is_empty());
         assert_eq!(leaf, deserialized);
         assert_eq!(leaf.serialize(), serialized)
