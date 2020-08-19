@@ -1,14 +1,10 @@
-pub use cat_file::cat_file;
-pub use checkout::checkout;
-pub use hash_object::hash_object;
-pub use init::init;
-pub use log::log;
+pub use subcommand::cat_file::cat_file;
+pub use subcommand::checkout::checkout;
+pub use subcommand::hash_object::hash_object;
+pub use subcommand::init::init;
+pub use subcommand::log::log;
 
-mod cat_file;
-mod checkout;
-mod hash_object;
-mod init;
-mod log;
 mod object;
 mod reference;
 mod repository;
+mod subcommand;
