@@ -20,15 +20,21 @@ impl Tree {
         self.leaves.iter().flat_map(|l| l.serialize()).collect()
     }
 
-    pub fn deserialize(bytes: Vec<u8>) -> Self {
-        let mut remainder: &[u8] = bytes.as_slice();
-        let mut leaves: Vec<Leaf> = vec![];
-        while !remainder.is_empty() {
-            let (rest, leaf) = Leaf::deserialize(remainder);
-            leaves.push(leaf);
-            remainder = rest
+    fn deserialize_leaves(bytes: &[u8]) -> Vec<Leaf> {
+        if bytes.is_empty() {
+            vec![]
+        } else {
+            let (remainder, leaf) = Leaf::deserialize(&bytes);
+            let mut other = Self::deserialize_leaves(remainder);
+            other.push(leaf);
+            other
         }
-        Self { leaves }
+    }
+
+    pub fn deserialize(bytes: Vec<u8>) -> Self {
+        Self {
+            leaves: Self::deserialize_leaves(&bytes),
+        }
     }
 }
 
