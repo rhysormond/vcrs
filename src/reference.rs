@@ -17,21 +17,19 @@ impl Reference {
     }
 
     pub fn from_name(name: &str) -> Self {
-        let reference = match name {
+        match name {
             "HEAD" => Reference::Head,
             head if head.starts_with("refs/heads/") => Reference::Ref(head.to_string()),
             commit => Reference::Commit(commit.to_string()),
-        };
-        reference
+        }
     }
 
     pub fn from_file(body: &str) -> Self {
         let ref_regex = Regex::new(r"^ref: (.*)\n$").unwrap();
         let commit_regex = Regex::new(r"^([a-z0-9]*)\n$").unwrap();
 
-        let maybe_match = ref_regex.captures(body).map(|c| c.get(1)).flatten();
-
-        let reference = match maybe_match {
+        let capture = ref_regex.captures(body).map(|c| c.get(1)).flatten();
+        match capture {
             Some(n) => Reference::Ref(n.as_str().to_string()),
             None => {
                 // TODO[Rhys] look at some other way to parse these
@@ -42,8 +40,7 @@ impl Reference {
                     .expect("Reference couldn't be parsed.");
                 Reference::Commit(hash.as_str().to_string())
             }
-        };
-        reference
+        }
     }
 }
 
